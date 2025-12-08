@@ -290,7 +290,7 @@ Database schema definitions, migrations, and seed data are maintained in the `da
 
 The backend follows the Model-View-Controller (MVC) pattern, providing clear separation of concerns:
 
-![alt text](image.png)
+![alt text](backend_mvc.png)
 
 ```plantuml
 @startuml DSCPMS_MVC_Architecture
@@ -504,7 +504,7 @@ note right: Users must re-login to be logged out
 
 DSCPMS is built around a clear domain model that represents the core business entities and their relationships:
 
-![alt text](image.png)
+![alt text](domain_model.png)
 
 ```plantuml
 @startuml DSCPMS_Domain_Model
@@ -1181,7 +1181,6 @@ DSCPMS Quality Goals
     │   └── 70% test coverage with clean architecture
     └── Documentation (Medium Priority)
         └── Complete API and component documentation
-```
 
 ### 10.2. Evaluation Scenarios
 
@@ -1261,6 +1260,5 @@ This design document follows the arc42 architecture template methodology, provid
 **Version:** 1.0  
 **Review Cycle:** Updated with each major system revision
 
----
 
 *This document uses material inspired by the arc42 architecture template and follows software engineering documentation best practices for academic and professional software development projects.*
