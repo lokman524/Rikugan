@@ -471,11 +471,11 @@ note right: Users must re-login to be logged out
 @enduml
 ```
 
-![alt text](image.png)
+![alt text](license_flow.png)
 
 ## 7. Deployment View
 
-![alt text](image.png)
+![alt text](deployment.png)
 
 | Component | Technology | Description |
 |-----------|------------|-------------|
