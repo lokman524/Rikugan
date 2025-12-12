@@ -14,7 +14,6 @@ Database Requirements
 - User table: id, username, email, password_hash, role, balance, created_at, updated_at
 - Tasks table: id, title, description, bounty_amount, deadline, status, created_by, assigned_to, created_at, updated_at
 - Notifications table: id, user_id, type, message, read_status, created_at
-- Audit_logs table: id, user_id, action, entity_type, entity_id, timestamp, details
 - Licenses table: id, user_id, license_key, expiry_date, status, created_at
 
 **Data Integrity Requirements:**

@@ -112,7 +112,6 @@ Design and Implementation Constraints
 **Regulatory and Policy Constraints:**
 - Must implement secure authentication and authorization
 - User data must be protected according to basic privacy standards
-- System must maintain audit logs for administrative actions
 
 **Resource Constraints:**
 - Development timeline: One week maximum

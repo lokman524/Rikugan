@@ -143,7 +143,7 @@ This chapter describes the environment and context of DSCPMS: who uses the syste
 
 ### 3.1. Business Context
 
-![Business Context Diagram](out/Business_context_diagram.png)
+![Business Context](Business_context.png)
 
 **Goons (Junior Programmers)**
 Entry-level developers who use DSCPMS to find and complete programming tasks in exchange for monetary bounties. They interact with the system to browse available tasks, accept assignments, track progress, and manage their earnings.
@@ -170,7 +170,7 @@ The client-side application runs in modern web browsers and communicates with th
 The server-side application provides RESTful API endpoints for all business logic, built with Express.js framework. Handles authentication, authorization, data validation, and business rule enforcement.
 
 **Database (MySQL)**
-Persistent data storage using MySQL 8.0+ with normalized relational schema for users, tasks, bounties, notifications, and audit logs.
+Persistent data storage using MySQL 8.0+ with normalized relational schema for users, tasks, bounties, notifications, and licenses.
 
 | Interface | Protocol | Description |
 |-----------|----------|-------------|
@@ -214,7 +214,7 @@ The application is structured as a modern web application with clear separation 
 
 ### 5.1. Whitebox DSCPMS System - Component Architecture
 
-![!\[alt text\](](High_level_Block_Diagram.png)
+![High Level Block Diagram](high_level_block.png)
 
 The system is decomposed into layered architecture with clear responsibilities:
 
@@ -284,83 +284,13 @@ Database schema definitions, migrations, and seed data are maintained in the `da
 
 ### 5.2. Use Case View
 
-![alt text](use_case.png)
+![Use Cases](use_case.png)
 
 ### 5.3. Backend MVC Architecture
 
 The backend follows the Model-View-Controller (MVC) pattern, providing clear separation of concerns:
 
 ![alt text](backend_mvc.png)
-
-```plantuml
-@startuml DSCPMS_MVC_Architecture
-!theme plain
-title Backend MVC Architecture
-
-package "Frontend" {
-  [React Client] as Client
-}
-
-package "Backend MVC" {
-  package "Controller Layer" {
-    [AuthController] as AuthCtrl
-    [TaskController] as TaskCtrl
-    [UserController] as UserCtrl
-    [BountyController] as BountyCtrl
-  }
-  
-  package "Model Layer" {
-    [User Model] as UserModel
-    [Task Model] as TaskModel
-    [Bounty Model] as BountyModel
-    [Notification Model] as NotifModel
-  }
-  
-  package "View Layer" {
-    [JSON Response Formatters] as JSONView
-    [Error Response Handlers] as ErrorView
-  }
-}
-
-package "Database" {
-  database "MySQL" as DB
-}
-
-' Client to Controller
-Client --> AuthCtrl : POST /api/v1/auth/login
-Client --> TaskCtrl : GET /api/v1/tasks
-Client --> UserCtrl : GET /api/v1/users/profile
-Client --> BountyCtrl : POST /api/v1/bounties
-
-' Controller to Model
-AuthCtrl --> UserModel : authenticate()
-TaskCtrl --> TaskModel : getTasks(), createTask()
-UserCtrl --> UserModel : getUser(), updateUser()
-BountyCtrl --> BountyModel : processBounty()
-
-' Model to Database
-UserModel --> DB : SQL Queries
-TaskModel --> DB : SQL Queries
-BountyModel --> DB : SQL Queries
-NotifModel --> DB : SQL Queries
-
-' Controller to View
-AuthCtrl --> JSONView : formatAuthResponse()
-TaskCtrl --> JSONView : formatTaskResponse()
-UserCtrl --> JSONView : formatUserResponse()
-BountyCtrl --> JSONView : formatBountyResponse()
-
-AuthCtrl --> ErrorView : handleAuthError()
-TaskCtrl --> ErrorView : handleTaskError()
-UserCtrl --> ErrorView : handleUserError()
-BountyCtrl --> ErrorView : handleBountyError()
-
-' View to Client
-JSONView --> Client : JSON Response
-ErrorView --> Client : Error Response
-
-@enduml
-```
 
 **Model Layer**
 - **Intent/Responsibility**: Data models, business entities, and database interactions
@@ -386,6 +316,468 @@ ErrorView --> Client : Error Response
 ### 5.4. Domain Model
 
 ![alt text](domain_model.png)
+
+### 5.5. Whitebox DSCPMS Backend API
+
+The following diagram shows the main building blocks of the backend API and their interdependencies:
+
+The backend API is functionally decomposed to separate responsibilities. Each module is encapsulated in its own package with clear interfaces and minimal coupling.
+
+**Contained Blackboxes:**
+
+| Module | Description |
+|--------|-------------|
+| **auth** | Authentication and authorization, JWT token management, user session handling |
+| **users** | User account management, profile operations, team membership |
+| **tasks** | Task lifecycle management, assignment logic, status tracking |
+| **bounties** | Bounty calculation, payment processing, balance management |
+| **notifications** | Real-time notification generation and delivery, user notification preferences |
+| **licenses** | Team license validation, expiry checking, access control |
+| **teams** | Team management, member operations, team statistics |
+
+All blackboxes are organized into corresponding Node.js modules. These modules have minimal dependencies on each other but may depend on shared utilities:
+
+**Shared Dependencies:**
+- `middleware/`: Authentication, validation, error handling middleware
+- `utils/`: Common utility functions, date helpers, formatters
+- `config/`: Configuration management, environment variables
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| **Authentication API** | JWT-based authentication endpoints for login, token refresh |
+| **Users API** | CRUD operations for user management, profile updates |
+| **Tasks API** | Task creation, assignment, status updates, filtering |
+| **Bounties API** | Bounty payment processing, balance queries |
+| **Notifications API** | Notification retrieval, marking as read, preferences |
+| **Licenses API** | License validation, team access verification |
+| **Teams API** | Team creation, member management, statistics |
+
+#### 5.5.1. auth (Blackbox)
+
+**Intent/Responsibility**  
+The `auth` module provides secure authentication and authorization for all API endpoints, managing JWT tokens and user sessions.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| POST /api/v1/auth/login | Authenticate user credentials and issue JWT token |
+| POST /api/v1/auth/register | Register new user account |
+| POST /api/v1/auth/refresh | Refresh expired JWT tokens |
+| POST /api/v1/auth/logout | Invalidate user session |
+| Middleware: authenticateToken | Verify JWT token for protected routes |
+| Middleware: authorizeRole | Check user role permissions |
+
+**Files:**  
+The `auth` module is contained in `backend/src/auth/` with controller, service, and middleware components.
+
+**Quality/Performance:**
+- JWT tokens expire after 8 hours
+- Refresh tokens valid for 7 days
+- Bcrypt with salt rounds of 10 for password hashing
+- Rate limiting: 5 failed login attempts per 15 minutes per IP
+
+#### 5.5.2. users (Blackbox)
+
+**Intent/Responsibility**  
+Manages user accounts, profiles, and team memberships. Handles user CRUD operations and role-based access control.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/users | List all users (admin only) |
+| GET /api/v1/users/:id | Get user by ID |
+| GET /api/v1/users/profile | Get current user profile |
+| PUT /api/v1/users/:id | Update user information |
+| PUT /api/v1/users/profile | Update current user profile |
+| DELETE /api/v1/users/:id | Deactivate user account (admin only) |
+| GET /api/v1/users/:id/tasks | Get tasks for specific user |
+| GET /api/v1/users/:id/earnings | Get earnings history |
+
+**Files:**  
+The `users` module is contained in `backend/src/users/` including UserController, UserService, and User model.
+
+**Business Rules:**
+- Username must be unique (3-50 characters)
+- Email must be valid and unique
+- Users can only update their own profiles unless admin
+- Deleted users retain historical data but cannot login
+
+#### 5.5.3. tasks (Blackbox)
+
+**Intent/Responsibility**  
+Manages the complete task lifecycle from creation to completion, including assignment logic, status tracking, and deadline management.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/tasks | List tasks with filtering and pagination |
+| GET /api/v1/tasks/:id | Get task details by ID |
+| POST /api/v1/tasks | Create new task (Hashira/Admin only) |
+| PUT /api/v1/tasks/:id | Update task details |
+| DELETE /api/v1/tasks/:id | Delete task (Admin only) |
+| POST /api/v1/tasks/:id/assign | Assign task to user (Goon selects task) |
+| PUT /api/v1/tasks/:id/status | Update task status |
+| POST /api/v1/tasks/:id/complete | Mark task as completed |
+| GET /api/v1/tasks/available | Get available tasks for current user |
+
+**Files:**  
+The `tasks` module is contained in `backend/src/tasks/` including TaskController, TaskService, and Task model.
+
+**Business Rules:**
+- Only Hashira and Admins can create tasks
+- Tasks can only be assigned to users in the same team
+- Completed tasks cannot be modified
+- Overdue tasks may incur penalties
+- Task status follows strict workflow: AVAILABLE → IN_PROGRESS → REVIEW → COMPLETED
+
+#### 5.5.4. bounties (Blackbox)
+
+**Intent/Responsibility**  
+Handles bounty calculations, payment processing, and user balance management for the reward system.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/bounties | List all bounties with filters |
+| GET /api/v1/bounties/:id | Get bounty details |
+| POST /api/v1/bounties/process | Process bounty payment (triggered by task completion) |
+| GET /api/v1/bounties/user/:userId | Get bounties for specific user |
+| GET /api/v1/bounties/pending | Get pending bounty payments |
+| PUT /api/v1/bounties/:id/status | Update bounty status (Admin only) |
+
+**Files:**  
+The `bounties` module is contained in `backend/src/bounties/` including BountyController, BountyService, and Bounty model.
+
+**Business Rules:**
+- Bounties are automatically created when tasks are created
+- Payment is processed upon task completion approval
+- Bonus calculation based on early completion
+- Penalty calculation for late completion
+- Failed tasks return bounty to pool
+
+#### 5.5.5. notifications (Blackbox)
+
+**Intent/Responsibility**  
+Generates, stores, and delivers notifications for system events, providing users with real-time updates about tasks, bounties, and team activities.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/notifications | Get notifications for current user |
+| GET /api/v1/notifications/unread | Get unread notifications count |
+| PUT /api/v1/notifications/:id/read | Mark notification as read |
+| PUT /api/v1/notifications/mark-all-read | Mark all notifications as read |
+| DELETE /api/v1/notifications/:id | Delete notification |
+| POST /api/v1/notifications/preferences | Update notification preferences |
+
+**Files:**  
+The `notifications` module is contained in `backend/src/notifications/` including NotificationController, NotificationService, and Notification model.
+
+**Notification Types:**
+- TASK_ASSIGNED: When a task is assigned to user
+- DEADLINE_REMINDER: 24 hours before task deadline
+- TASK_COMPLETED: When assigned task is completed
+- BOUNTY_RECEIVED: When bounty is paid to user
+- LICENSE_EXPIRING: 7 days before license expiry
+
+#### 5.5.6. licenses (Blackbox)
+
+**Intent/Responsibility**  
+Validates team licenses, checks expiry dates, and enforces access control based on license status.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/licenses | List all licenses (Admin only) |
+| GET /api/v1/licenses/:id | Get license details |
+| POST /api/v1/licenses | Issue new license (Admin only) |
+| PUT /api/v1/licenses/:id | Update license (Admin only) |
+| PUT /api/v1/licenses/:id/renew | Renew license |
+| PUT /api/v1/licenses/:id/revoke | Revoke license (Admin only) |
+| GET /api/v1/licenses/validate/:licenseKey | Validate license key |
+| Middleware: validateLicense | Check user's team license validity |
+
+**Files:**  
+The `licenses` module is contained in `backend/src/licenses/` including LicenseController, LicenseService, and License model.
+
+**Business Rules:**
+- One license per team
+- License must be active for team members to access system
+- Expired licenses block all team member access
+- Revoked licenses cannot be renewed
+- Maximum users per license enforced
+
+#### 5.5.7. teams (Blackbox)
+
+**Intent/Responsibility**  
+Manages team entities, member operations, and provides team-level statistics and reporting.
+
+**Interfaces:**
+
+| Interface | Description |
+|-----------|-------------|
+| GET /api/v1/teams | List all teams (Admin only) |
+| GET /api/v1/teams/:id | Get team details |
+| POST /api/v1/teams | Create new team (Admin only) |
+| PUT /api/v1/teams/:id | Update team information |
+| DELETE /api/v1/teams/:id | Delete team (Admin only) |
+| GET /api/v1/teams/:id/members | Get team members |
+| POST /api/v1/teams/:id/members | Add member to team |
+| DELETE /api/v1/teams/:id/members/:userId | Remove member from team |
+| GET /api/v1/teams/:id/statistics | Get team performance statistics |
+
+**Files:**  
+The `teams` module is contained in `backend/src/teams/` including TeamController, TeamService, and Team model.
+
+**Business Rules:**
+- Team names must be unique
+- Teams must have valid license to be active
+- Removing last member deactivates team
+- Team statistics include task completion rates, total bounties earned
+
+### 5.6. Building Blocks - Level 2 (Whitebox)
+
+#### 5.6.1. auth (Whitebox)
+
+**Internal Structure:**
+
+The `auth` module implements a layered architecture with clear separation between HTTP handling, business logic, and data access:
+
+```
+auth/
+├── AuthController.js      - HTTP request handling, input validation
+├── AuthService.js         - Business logic, JWT generation, password verification
+├── authMiddleware.js      - Authentication and authorization middleware
+└── authUtils.js           - Helper functions for token operations
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| AuthController | Handles login, register, refresh, logout endpoints; validates request data |
+| AuthService | Generates JWT tokens, verifies passwords with bcrypt, manages refresh tokens |
+| authenticateToken | Middleware that extracts and verifies JWT from request headers |
+| authorizeRole | Middleware that checks user role permissions (GOON, HASHIRA, OYAKATASAMA) |
+| authUtils | Token signing, verification, expiry checking utilities |
+
+**Dependencies:**
+- `jsonwebtoken`: JWT token generation and verification
+- `bcrypt`: Password hashing and comparison
+- `User model`: User data retrieval and validation
+- `config/jwt.config.js`: JWT secret and expiration settings
+
+**Workflow:**
+1. User sends credentials to `/api/v1/auth/login`
+2. AuthController validates input format
+3. AuthService retrieves user from database
+4. Password verified using bcrypt.compare()
+5. JWT token generated with user id and role
+6. Token returned to client with expiration time
+
+#### 5.6.2. users (Whitebox)
+
+**Internal Structure:**
+
+```
+users/
+├── UserController.js      - REST endpoint handlers
+├── UserService.js         - User business logic
+├── UserModel.js           - Sequelize model definition
+└── userValidation.js      - Input validation schemas
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| UserController | Handles HTTP requests for user CRUD operations |
+| UserService | Business logic for user operations, role checks, team membership |
+| UserModel | Database entity with validation rules and associations |
+| userValidation | Joi schemas for input validation |
+
+**Dependencies:**
+- Sequelize ORM for database operations
+- Team model for team association
+- License model for license validation
+- Bcrypt for password hashing
+
+**Key Operations:**
+- `createUser()`: Validates uniqueness, hashes password, assigns default role
+- `updateUser()`: Checks permissions, validates changes, updates database
+- `getUserEarnings()`: Aggregates bounty payments for user
+- `getUserTasks()`: Retrieves tasks with filtering by status
+
+#### 5.6.3. tasks (Whitebox)
+
+**Internal Structure:**
+
+```
+tasks/
+├── TaskController.js      - REST endpoint handlers
+├── TaskService.js         - Task business logic
+├── TaskModel.js           - Sequelize model with associations
+├── taskValidation.js      - Input validation
+└── taskHelpers.js         - Penalty/bonus calculations
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| TaskController | Handles task CRUD, assignment, status updates |
+| TaskService | Implements task lifecycle logic, permission checks |
+| TaskModel | Database entity with status enum and relationships |
+| taskHelpers | Calculate penalties for overdue tasks, bonuses for early completion |
+
+**Dependencies:**
+- User model for assignment
+- Bounty model for automatic bounty creation
+- Notification service for event notifications
+- Team model for team-based filtering
+
+**Business Logic:**
+- `assignTask()`: Validates user eligibility, updates status, creates notification
+- `completeTask()`: Verifies completion, triggers bounty processing, sends notifications
+- `calculatePenalty()`: Computes penalty based on days overdue
+- `isOverdue()`: Checks if current date exceeds deadline
+
+#### 5.6.4. bounties (Whitebox)
+
+**Internal Structure:**
+
+```
+bounties/
+├── BountyController.js    - REST endpoint handlers
+├── BountyService.js       - Payment processing logic
+├── BountyModel.js         - Sequelize model
+└── bountyCalculator.js    - Bonus/penalty calculation algorithms
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| BountyController | Handles bounty queries and status updates |
+| BountyService | Processes payments, updates user balances |
+| BountyModel | Database entity with task association |
+| bountyCalculator | Implements reward calculation formulas |
+
+**Dependencies:**
+- Task model for task completion data
+- User model for balance updates
+- Notification service for payment notifications
+
+**Payment Processing Flow:**
+1. Task completion triggers `processBounty()`
+2. Calculate final amount (base + bonus - penalty)
+3. Create transaction record
+4. Update user balance
+5. Update bounty status to PAID
+6. Send notification to user
+
+#### 5.6.5. notifications (Whitebox)
+
+**Internal Structure:**
+
+```
+notifications/
+├── NotificationController.js  - REST endpoint handlers
+├── NotificationService.js     - Notification generation logic
+├── NotificationModel.js       - Sequelize model
+└── notificationTemplates.js   - Message templates
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| NotificationController | Handles notification retrieval and marking as read |
+| NotificationService | Creates notifications, determines recipients |
+| NotificationModel | Database entity with type enum |
+| notificationTemplates | Pre-defined message templates for different event types |
+
+**Event Triggers:**
+- Task assigned → Notify assigned user
+- Task completed → Notify creator and assignee
+- Bounty paid → Notify recipient
+- Deadline approaching → Notify assignee (automated job)
+- License expiring → Notify team admin (automated job)
+
+#### 5.6.6. licenses (Whitebox)
+
+**Internal Structure:**
+
+```
+licenses/
+├── LicenseController.js   - REST endpoint handlers
+├── LicenseService.js      - Validation and renewal logic
+├── LicenseModel.js        - Sequelize model
+└── licenseGenerator.js    - License key generation
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| LicenseController | Handles license CRUD and validation endpoints |
+| LicenseService | Validates licenses, checks expiry, enforces limits |
+| LicenseModel | Database entity with team association |
+| licenseGenerator | Generates unique license keys |
+
+**Validation Logic:**
+```javascript
+function isValid(license) {
+  return license.status === 'ACTIVE' 
+    && license.expiryDate > new Date()
+    && !license.isRevoked;
+}
+
+function canAccommodateUsers(license, currentMemberCount) {
+  return currentMemberCount < license.maxUsers;
+}
+```
+
+#### 5.6.7. teams (Whitebox)
+
+**Internal Structure:**
+
+```
+teams/
+├── TeamController.js      - REST endpoint handlers
+├── TeamService.js         - Team operations logic
+├── TeamModel.js           - Sequelize model
+└── teamStatistics.js      - Statistics calculation
+```
+
+**Contained Components:**
+
+| Component | Responsibility |
+|-----------|----------------|
+| TeamController | Handles team CRUD and member management |
+| TeamService | Team operations, member addition/removal |
+| TeamModel | Database entity with user and license associations |
+| teamStatistics | Aggregates team performance metrics |
+
+**Team Statistics:**
+- Total tasks completed
+- Total bounties earned
+- Average task completion time
+- Active member count
+- Task completion rate by priority
+
+**Member Management:**
+- `addMember()`: Validates license capacity, adds user to team
+- `removeMember()`: Removes user, reassigns their tasks
+- `getMemberCount()`: Returns current active member count
 
 ## 6. Runtime View
 
@@ -504,199 +896,7 @@ note right: Users must re-login to be logged out
 
 DSCPMS is built around a clear domain model that represents the core business entities and their relationships:
 
-![alt text](domain_model.png)
-
-```plantuml
-@startuml DSCPMS_Domain_Model
-!theme plain
-title DSCPMS Domain Model - Team-Based Architecture
-
-class Team {
-  -id: number
-  -name: string
-  -description: string
-  -createdAt: Date
-  -updatedAt: Date
-  +hasValidLicense(): boolean
-  +canAddMember(): boolean
-  +getMemberCount(): number
-  +isLicenseExpired(): boolean
-}
-
-class User {
-  -id: number
-  -teamId: number
-  -username: string
-  -email: string
-  -passwordHash: string
-  -role: UserRole
-  -balance: number
-  -createdAt: Date
-  -updatedAt: Date
-  +canCreateTask(): boolean
-  +canAssignTask(): boolean
-  +hasValidTeamLicense(): boolean
-  +calculateTotalEarnings(): number
-  +getTeam(): Team
-}
-
-enum UserRole {
-  GOON
-  HASHIRA
-  OYAKATASAMA
-}
-
-class Task {
-  -id: number
-  -teamId: number
-  -title: string
-  -description: string
-  -bountyAmount: number
-  -deadline: Date
-  -status: TaskStatus
-  -priority: Priority
-  -createdBy: number
-  -assignedTo: number
-  -createdAt: Date
-  -updatedAt: Date
-  +isOverdue(): boolean
-  +canBeAssignedTo(user: User): boolean
-  +calculatePenalty(): number
-  +getTimeRemaining(): Duration
-  +belongsToTeam(teamId: number): boolean
-}
-
-enum TaskStatus {
-  AVAILABLE
-  IN_PROGRESS
-  REVIEW
-  COMPLETED
-  CANCELLED
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-class Bounty {
-  -id: number
-  -taskId: number
-  -userId: number
-  -amount: number
-  -status: BountyStatus
-  -paidAt: Date
-  +process(): void
-  +calculateBonus(): number
-  +canBePaid(): boolean
-}
-
-enum BountyStatus {
-  PENDING
-  PAID
-  CANCELLED
-}
-
-class License {
-  -id: number
-  -teamId: number
-  -licenseKey: string
-  -status: LicenseStatus
-  -maxUsers: number
-  -expiryDate: Date
-  -createdAt: Date
-  -updatedAt: Date
-  +isValid(): boolean
-  +isExpired(): boolean
-  +canAccommodateUsers(count: number): boolean
-  +renew(): void
-  +revoke(): void
-}
-
-enum LicenseStatus {
-  ACTIVE
-  EXPIRED
-  REVOKED
-}
-
-class Notification {
-  -id: number
-  -userId: number
-  -type: NotificationType
-  -title: string
-  -message: string
-  -readStatus: boolean
-  -createdAt: Date
-  +markAsRead(): void
-  +send(): void
-}
-
-enum NotificationType {
-  TASK_ASSIGNED
-  DEADLINE_REMINDER
-  TASK_COMPLETED
-  BOUNTY_RECEIVED
-  ACHIEVEMENT_UNLOCKED
-  LICENSE_EXPIRING
-  TEAM_INVITATION
-}
-
-class AuditLog {
-  -id: number
-  -userId: number
-  -teamId: number
-  -action: string
-  -entityType: string
-  -entityId: number
-  -timestamp: Date
-  -details: string
-  +record(action: string, entity: any): void
-}
-
-class ProjectBoard {
-  -id: number
-  -teamId: number
-  -name: string
-  -description: string
-  -tasks: Task[]
-  +addTask(task: Task): void
-  +moveTask(taskId: number, status: TaskStatus): void
-  +getTasksByStatus(status: TaskStatus): Task[]
-}
-
-' Team relationships
-Team ||--|| License : has
-Team ||--o{ User : contains
-Team ||--o{ Task : owns
-Team ||--o{ ProjectBoard : manages
-
-' User relationships
-User ||--o{ Task : creates
-User ||--o{ Task : assigned_to
-User ||--o{ Bounty : receives
-User ||--o{ Notification : receives
-User ||--o{ AuditLog : generates
-User }o--|| Team : belongs_to
-
-' Task relationships
-Task ||--|| Bounty : has
-Task }o--|| ProjectBoard : belongs_to
-Task }o--|| Team : belongs_to
-
-' License relationship
-License ||--|| Team : controls_access_for
-
-' Enums
-User }o--|| UserRole : has
-Task }o--|| TaskStatus : has
-Task }o--|| Priority : has
-Bounty }o--|| BountyStatus : has
-Notification }o--|| NotificationType : has
-License }o--|| LicenseStatus : has
-
-@enduml
-```
+![alt text](domain_class_model.png)
 
 **Core Domain Entities:**
 
@@ -708,7 +908,6 @@ License }o--|| LicenseStatus : has
 | **Bounty** | Monetary rewards for task completion | amount, status (pending/paid/cancelled), paidAt |
 | **License** | Team-based access control | licenseKey, teamId, status, expiryDate, maxUsers |
 | **Notification** | System-generated user notifications | type, message, readStatus, timestamp |
-| **AuditLog** | System activity tracking | userId, action, entityType, timestamp |
 
 **Important Business Methods:**
 
@@ -1059,7 +1258,6 @@ Implemented a balanced approach (3NF) with strategic denormalization:
 - **Users table**: Core user data with role enum for efficient querying
 - **Tasks table**: Task details with foreign keys to users for creator and assignee
 - **Bounties table**: Separate entity for tracking monetary transactions
-- **Audit logging**: Separate table for compliance and debugging
 
 **Benefits:**
 - Data integrity through foreign key constraints

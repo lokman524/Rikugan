@@ -2,6 +2,65 @@
 
 This document contains PlantUML diagrams that visualize the system architecture, component relationships, and user interactions for the DSCPMS.
 
+## Business Context Diagram
+
+```plantuml
+@startuml DSCPMS_Business_Context
+!theme plain
+title DSCPMS Business Context
+
+actor "Goons\n(Junior Programmers)" as Goons
+actor "Hashira\n(Senior Programmers)" as Hashira
+actor "Oyakatasama\n(System Administrators)" as Admin
+
+package "DSCPMS System" {
+  [Task & Bounty Management System] as DSCPMS
+}
+
+Goons --> DSCPMS : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
+Hashira --> DSCPMS : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
+Admin --> DSCPMS : User management\nLicense distribution\nSystem configuration\nFull access
+
+@enduml
+```
+
+## Technical Context Diagram
+
+```plantuml
+@startuml DSCPMS_Technical_Context
+!theme plain
+title DSCPMS Technical Context
+
+actor "Web Users" as Users
+package "Client Environment" {
+  [Web Browsers] as Browser
+  [React Frontend] as Frontend
+  [Vite Build Tool] as Vite
+}
+
+package "Server Environment" {
+  [Node.js Backend] as Backend
+  [Express.js MVC] as MVC
+  [MySQL Database] as DB
+}
+
+package "Infrastructure" {
+  [Docker Container] as Docker
+  [External Libraries] as ExtLib
+}
+
+Users --> Browser : User Interaction
+Browser --> Frontend : DOM/Events
+Frontend --> Vite : Build Process
+Frontend --> Backend : HTTPS/REST API
+Backend --> MVC : MVC Architecture
+MVC --> DB : Database Queries
+Docker --> Backend : Runtime Environment
+Backend --> ExtLib : JWT, bcrypt, etc.
+
+@enduml
+```
+
 ## Component Diagram - System Architecture
 
 ```plantuml
@@ -35,7 +94,6 @@ package "Data Access Layer" {
   [User Repository] as UserRepo
   [Task Repository] as TaskRepo
   [Notification Repository] as NotifRepo
-  [Audit Repository] as AuditRepo
 }
 
 package "Database Layer" {
@@ -43,7 +101,6 @@ package "Database Layer" {
     [Users Table] as UsersTable
     [Tasks Table] as TasksTable
     [Notifications Table] as NotifTable
-    [Audit Logs Table] as AuditTable
     [Licenses Table] as LicensesTable
   }
 }
@@ -82,13 +139,11 @@ API --> AnalyticsSvc : Analytics
 UserSvc --> UserRepo : Data Access
 TaskSvc --> TaskRepo : Data Access
 NotifSvc --> NotifRepo : Data Access
-BountySvc --> AuditRepo : Audit Logging
 
 ' Database relationships
 UserRepo --> UsersTable : CRUD Operations
 TaskRepo --> TasksTable : CRUD Operations
 NotifRepo --> NotifTable : CRUD Operations
-AuditRepo --> AuditTable : CRUD Operations
 UserRepo --> LicensesTable : License Management
 
 ' External Services relationships
@@ -186,6 +241,80 @@ ReviewTask ..> ManageBounty : affects
 @enduml
 ```
 
+### 5.3. Backend MVC Architecture
+
+The backend follows the Model-View-Controller (MVC) pattern, providing clear separation of concerns:
+
+```plantuml
+@startuml DSCPMS_MVC_Architecture
+!theme plain
+title Backend MVC Architecture
+
+package "Frontend" {
+  [React Client] as Client
+}
+
+package "Backend MVC" {
+  package "Controller Layer" {
+    [AuthController] as AuthCtrl
+    [TaskController] as TaskCtrl
+    [UserController] as UserCtrl
+    [BountyController] as BountyCtrl
+  }
+  
+  package "Model Layer" {
+    [User Model] as UserModel
+    [Task Model] as TaskModel
+    [Bounty Model] as BountyModel
+    [Notification Model] as NotifModel
+  }
+  
+  package "View Layer" {
+    [JSON Response Formatters] as JSONView
+    [Error Response Handlers] as ErrorView
+  }
+}
+
+package "Database" {
+  database "MySQL" as DB
+}
+
+' Client to Controller
+Client --> AuthCtrl : POST /api/v1/auth/login
+Client --> TaskCtrl : GET /api/v1/tasks
+Client --> UserCtrl : GET /api/v1/users/profile
+Client --> BountyCtrl : POST /api/v1/bounties
+
+' Controller to Model
+AuthCtrl --> UserModel : authenticate()
+TaskCtrl --> TaskModel : getTasks(), createTask()
+UserCtrl --> UserModel : getUser(), updateUser()
+BountyCtrl --> BountyModel : processBounty()
+
+' Model to Database
+UserModel --> DB : SQL Queries
+TaskModel --> DB : SQL Queries
+BountyModel --> DB : SQL Queries
+NotifModel --> DB : SQL Queries
+
+' Controller to View
+AuthCtrl --> JSONView : formatAuthResponse()
+TaskCtrl --> JSONView : formatTaskResponse()
+UserCtrl --> JSONView : formatUserResponse()
+BountyCtrl --> JSONView : formatBountyResponse()
+
+AuthCtrl --> ErrorView : handleAuthError()
+TaskCtrl --> ErrorView : handleTaskError()
+UserCtrl --> ErrorView : handleUserError()
+BountyCtrl --> ErrorView : handleBountyError()
+
+' View to Client
+JSONView --> Client : JSON Response
+ErrorView --> Client : Error Response
+
+@enduml
+```
+
 ## Class Diagram - Core Domain Models
 
 ```plantuml
@@ -193,8 +322,21 @@ ReviewTask ..> ManageBounty : affects
 !theme plain
 title Demon Slayer Corps Project Management System - Class Diagram
 
+class Team {
+  -id: number
+  -name: string
+  -description: string
+  -createdAt: Date
+  -updatedAt: Date
+  +hasValidLicense(): boolean
+  +canAddMember(): boolean
+  +getMemberCount(): number
+  +isLicenseExpired(): boolean
+}
+
 class User {
   -id: number
+  -teamId: number
   -username: string
   -email: string
   -passwordHash: string
@@ -206,6 +348,10 @@ class User {
   +updateProfile(data: ProfileData): void
   +checkBalance(): number
   +getTaskHistory(): Task[]
+  +canCreateTask(): boolean
+  +canAssignTask(): boolean
+  +hasValidTeamLicense(): boolean
+  +getTeam(): Team
 }
 
 enum UserRole {
@@ -216,6 +362,7 @@ enum UserRole {
 
 class Task {
   -id: number
+  -teamId: number
   -title: string
   -description: string
   -bountyAmount: number
@@ -284,12 +431,15 @@ enum NotificationType {
 
 class License {
   -id: number
-  -userId: number
+  -teamId: number
   -licenseKey: string
   -expiryDate: Date
   -status: LicenseStatus
+  -maxUsers: number
   -createdAt: Date
   +isValid(): boolean
+  +isExpired(): boolean
+  +canAccommodateUsers(count: number): boolean
   +renew(): void
   +revoke(): void
 }
@@ -300,19 +450,9 @@ enum LicenseStatus {
   REVOKED
 }
 
-class AuditLog {
-  -id: number
-  -userId: number
-  -action: string
-  -entityType: string
-  -entityId: number
-  -timestamp: Date
-  -details: string
-  +record(action: string, entity: any): void
-}
-
 class ProjectBoard {
   -id: number
+  -teamId: number
   -name: string
   -description: string
   -tasks: Task[]
@@ -321,16 +461,26 @@ class ProjectBoard {
   +getTasksByStatus(status: TaskStatus): Task[]
 }
 
-' Relationships
+' Team relationships
+Team ||--|| License : has
+Team ||--o{ User : contains
+Team ||--o{ Task : owns
+Team ||--o{ ProjectBoard : manages
+
+' User relationships
 User ||--o{ Task : creates
 User ||--o{ Task : assigned_to
 User ||--o{ Bounty : receives
 User ||--o{ Notification : receives
-User ||--|| License : has
-User ||--o{ AuditLog : generates
+User }o--|| Team : belongs_to
 
+' Task relationships
 Task ||--|| Bounty : has
 Task }o--|| ProjectBoard : belongs_to
+Task }o--|| Team : belongs_to
+
+' License relationship
+License ||--|| Team : controls_access_for
 
 User }o--|| UserRole : has
 Task }o--|| TaskStatus : has
@@ -339,6 +489,33 @@ Bounty }o--|| BountyStatus : has
 Notification }o--|| NotificationType : has
 License }o--|| LicenseStatus : has
 
+@enduml
+```
+
+## Sequence Diagram - User Authentication Flow
+
+```plantuml
+@startuml DSCPMS_User_Authentication_Sequence
+!theme plain
+title User Authentication Flow
+
+actor "User" as U
+participant "Frontend" as F
+participant "API Gateway" as A
+participant "Auth Service" as AS
+participant "Database" as DB
+
+U->>F: Enter login credentials
+F->>A: POST /api/v1/auth/login
+A->>AS: authenticate(credentials)
+AS->>DB: SELECT user WHERE username=? AND active=true
+DB-->>AS: User data
+AS->>AS: bcrypt.compare(password, hashedPassword)
+AS->>AS: generateJWT(user.id, user.role)
+AS-->>A: JWT token + user data
+A-->>F: Authentication response
+F->>F: Store token in localStorage
+F-->>U: Redirect to role-appropriate dashboard
 @enduml
 ```
 
@@ -396,7 +573,6 @@ API -> TS: completeTask(taskId)
 TS -> DB: UPDATE tasks SET status='completed'
 TS -> BS: processBounty(taskId, userId)
 BS -> DB: UPDATE users SET balance=balance+bounty
-BS -> DB: INSERT INTO audit_logs
 BS -> NS: notifyBountyAwarded(userId, amount)
 NS -> DB: INSERT INTO notifications
 TS --> API: completion confirmation
@@ -406,75 +582,224 @@ F --> G: Task completed, bounty awarded
 @enduml
 ```
 
+## Sequence Diagram - Notification System Flow
+
+```plantuml
+@startuml DSCPMS_Notification_Flow
+!theme plain
+title Real-time Notification System Flow
+
+actor "User" as U
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Notification Service" as NS
+participant "Task Service" as TS
+participant "WebSocket Server" as WS
+participant "Database" as DB
+
+== Notification Generation ==
+U -> F: Perform action (create task, update status, etc.)
+F -> API: API call for action
+API -> TS: Process business logic
+TS -> NS: triggerNotification(event, targetUsers, data)
+NS -> NS: createNotification(type, message, recipients)
+NS -> DB: INSERT INTO notifications
+DB --> NS: notification_id
+NS -> WS: broadcastToUsers(userIds, notification)
+WS --> F: Real-time notification push
+F -> F: Update notification badge/display
+F --> U: Show notification popup
+
+== Notification Retrieval ==
+U -> F: Check notifications
+F -> API: GET /api/v1/notifications
+API -> NS: getUserNotifications(userId, unread_only)
+NS -> DB: SELECT * FROM notifications WHERE user_id=? AND read_status=false
+DB --> NS: notification list
+NS --> API: formatted notifications
+API --> F: JSON response
+F --> U: Display notification list
+
+== Notification Management ==
+U -> F: Mark notification as read
+F -> API: PUT /api/v1/notifications/{id}/read
+API -> NS: markAsRead(notificationId, userId)
+NS -> DB: UPDATE notifications SET read_status=true WHERE id=? AND user_id=?
+DB --> NS: update confirmation
+NS --> API: success response
+API --> F: confirmation
+F -> F: Update UI state
+F --> U: Remove notification badge
+
+== System Notifications ==
+note over NS: Automated system events
+NS -> NS: checkDeadlineReminders()
+NS -> DB: SELECT tasks WHERE deadline < NOW() + INTERVAL 24 HOUR
+DB --> NS: upcoming deadlines
+NS -> NS: createDeadlineNotifications()
+NS -> DB: INSERT INTO notifications (batch)
+NS -> WS: broadcastDeadlineAlerts()
+WS --> F: Push deadline warnings
+F --> U: Display deadline alerts
+
+@enduml
+```
+
 ## Deployment Diagram - Docker Architecture
 
 ```plantuml
 @startuml DSCPMS_Deployment_Diagram
 !theme plain
-title Demon Slayer Corps Project Management System - Deployment Architecture
+title DSCPMS Deployment Architecture
 
-node "Development Environment" {
-  node "Docker Host" as DockerHost {
-    
-    node "Frontend Container" as FrontendContainer {
-      component "React App" as ReactApp
-      component "Vite Dev Server" as ViteServer
-      component "HeroUI Components" as HeroUI
-      artifact "Static Assets" as Assets
-    }
-    
-    node "Backend Container" as BackendContainer {
-      component "Node.js Runtime" as NodeRuntime
-      component "Express.js Server" as ExpressServer
-      component "API Routes" as APIRoutes
-      component "Business Logic" as BusinessLogic
-      component "Authentication Middleware" as AuthMiddleware
-    }
-    
-    node "Database Container" as DBContainer {
-      database "MySQL 8.0" as MySQL {
-        table "users"
-        table "tasks"
-        table "notifications"
-        table "audit_logs"
-        table "licenses"
-      }
-      component "Database Driver" as DBDriver
-    }
-    
-    node "Shared Volumes" as Volumes {
-      artifact "Source Code" as SourceCode
-      artifact "Database Data" as DBData
-      artifact "Logs" as LogFiles
-    }
-  }
-  
-  node "Developer Machine" as DevMachine {
-    component "Code Editor" as CodeEditor
-    component "Git Repository" as Git
-    component "Docker Compose" as DockerCompose
+package "Development Environment" {
+  [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
+}
+
+package "Docker Host" {
+  package "Container Platform" {
+    [Frontend Container\n(React/Vite + nginx)] as FrontendContainer
+    [Backend Container\n(Node.js/Express)] as BackendContainer
+    [Database Container\n(MySQL 8.0+)] as DatabaseContainer
+    [Reverse Proxy\n(nginx)] as ReverseProxy
   }
 }
 
-cloud "External Services" as External {
-  component "npm Registry" as NPMRegistry
-  component "Docker Hub" as DockerHub
+package "Client Environment" {
+  [Web Browser\n(Chrome, Firefox, Safari)] as Browser
 }
 
-' Container relationships
-FrontendContainer --> BackendContainer : HTTP/HTTPS\n(Port 3000 -> 5000)
-BackendContainer --> DBContainer : MySQL Protocol\n(Port 3306)
-FrontendContainer --> Volumes : Mount /app/src
-BackendContainer --> Volumes : Mount /app/src
-DBContainer --> Volumes : Mount /var/lib/mysql
+' Relationships
+DevTools --> FrontendContainer : Deploy & Debug
+DevTools --> BackendContainer : Deploy & Debug
+Browser --> ReverseProxy : HTTPS Requests
+ReverseProxy --> FrontendContainer : Static Files
+ReverseProxy --> BackendContainer : API Calls
+BackendContainer --> DatabaseContainer : Database Queries
+FrontendContainer --> BackendContainer : REST API
 
-' Development workflow
-DevMachine --> DockerHost : Docker Commands
-CodeEditor --> SourceCode : File System
-Git --> SourceCode : Version Control
-DockerCompose --> FrontendContainer : Orchestration
-DockerCompose --> BackendContainer : Orchestration
-DockerCompose --> DBContainer : Orchestration
+' Network connections
+Browser ..> FrontendContainer : Port 80/443
+ReverseProxy ..> FrontendContainer : Port 3000
+ReverseProxy ..> BackendContainer : Port 3001
+BackendContainer ..> DatabaseContainer : Port 3306
+
+note right of DevTools
+  Development features:
+  - Hot reload
+  - Debug ports
+  - Volume mounting
+end note
+
+note right of ReverseProxy
+  Production features:
+  - Load balancing
+  - SSL termination
+  - Static file serving
+  - API routing
+end note
+
+@enduml
+```
+
+## Domain Model Diagram
+
+```plantuml
+@startuml DSCPMS_Domain_Model
+!theme plain
+title DSCPMS Domain Model
+
+class Team {
+  -id: number
+  -name: string
+  -description: string
+  +hasValidLicense(): boolean
+  +canAddMember(): boolean
+  +getMemberCount(): number
+  +isLicenseExpired(): boolean
+}
+
+class User {
+  -id: number
+  -teamId: number
+  -username: string
+  -email: string
+  -role: UserRole
+  -balance: number
+  +canCreateTask(): boolean
+  +canAssignTask(): boolean
+  +hasValidLicense(): boolean
+  +hasValidTeamLicense(): boolean
+  +calculateTotalEarnings(): number
+  +getTeam(): Team
+}
+
+class Task {
+  -id: number
+  -teamId: number
+  -title: string
+  -description: string
+  -bountyAmount: number
+  -deadline: Date
+  -status: TaskStatus
+  -priority: Priority
+  +isOverdue(): boolean
+  +canBeAssignedTo(user: User): boolean
+  +calculatePenalty(): number
+  +getTimeRemaining(): Duration
+}
+
+class Bounty {
+  -id: number
+  -taskId: number
+  -amount: number
+  -status: BountyStatus
+  +process(): void
+  +calculateBonus(): number
+  +canBePaid(): boolean
+}
+
+class License {
+  -id: number
+  -teamId: number
+  -licenseKey: string
+  -expiryDate: Date
+  -status: LicenseStatus
+  -maxUsers: number
+  +isValid(): boolean
+  +isExpired(): boolean
+  +canAccommodateUsers(count: number): boolean
+}
+
+class Notification {
+  -id: number
+  -userId: number
+  -type: NotificationType
+  -message: string
+  -readStatus: boolean
+}
+
+' Team relationships
+Team ||--|| License : has
+Team ||--o{ User : contains
+Team ||--o{ Task : owns
+
+' User relationships
+User ||--o{ Task : creates
+User ||--o{ Task : assigned_to
+User ||--o{ Bounty : receives
+User ||--o{ Notification : receives
+User }o--|| Team : belongs_to
+
+' Task and other relationships
+Task ||--|| Bounty : has
+Task }o--|| Team : belongs_to
+License ||--|| Team : controls_access_for
+
+@enduml
+```
+
+## Database Entity Relationship Diagram
 
 ' External dependencies
 BackendContainer --> NPMRegistry : Package Dependencies
@@ -489,120 +814,6 @@ DBContainer : "Port 3306\n(MySQL)"
 FrontendContainer : "VITE_API_URL=http://localhost:5000"
 BackendContainer : "DB_HOST=mysql_container\nDB_PORT=3306\nJWT_SECRET=dev_secret"
 DBContainer : "MYSQL_ROOT_PASSWORD=rootpassword\nMYSQL_DATABASE=dscpms"
-
-@enduml
-```
-
-## Activity Diagram - User Registration Process
-
-```plantuml
-@startuml DSCPMS_User_Registration_Activity
-!theme plain
-title User Registration and Onboarding Process
-
-start
-
-:Administrator logs into system;
-
-:Navigate to User Management;
-
-:Click "Create New User";
-
-:Fill user registration form;
-note right
-  - Username
-  - Email
-  - Initial Password
-  - Role Assignment
-  - License Allocation
-end note
-
-:Submit registration form;
-
-if (Validation successful?) then (yes)
-  :Generate password hash;
-  :Create user record in database;
-  :Generate license key;
-  :Create license record;
-  :Send welcome notification;
-  
-  if (Role is Goon?) then (yes)
-    :Set basic permissions;
-    :Add to Goons group;
-  elseif (Role is Hashira?) then (yes)
-    :Set elevated permissions;
-    :Add to Hashira group;
-  else (Oyakatasama)
-    :Set admin permissions;
-    :Add to Admin group;
-  endif
-  
-  :Log user creation in audit trail;
-  :Display success message;
-  
-else (no)
-  :Display validation errors;
-  :Return to registration form;
-endif
-
-:End registration process;
-
-stop
-
-@enduml
-```
-
-## State Diagram - Task Lifecycle
-
-```plantuml
-@startuml DSCPMS_Task_State_Diagram
-!theme plain
-title Task Lifecycle State Diagram
-
-[*] --> Available : Task created by Hashira
-
-Available --> InProgress : Goon selects task
-Available --> Cancelled : Admin/Hashira cancels
-
-InProgress --> Review : Goon submits for review
-InProgress --> Available : Goon abandons task
-InProgress --> Overdue : Deadline passed
-
-Review --> Completed : Hashira approves
-Review --> InProgress : Hashira requests changes
-Review --> Cancelled : Major issues found
-
-Overdue --> Review : Late submission
-Overdue --> Cancelled : Task abandoned
-Overdue --> InProgress : Extension granted
-
-Completed --> [*] : Final state
-Cancelled --> [*] : Final state
-
-state InProgress {
-  [*] --> Working
-  Working --> Testing : Development complete
-  Testing --> Working : Issues found
-  Testing --> ReadyForReview : All tests pass
-  ReadyForReview --> [*]
-}
-
-state Review {
-  [*] --> PendingReview
-  PendingReview --> UnderReview : Hashira starts review
-  UnderReview --> ChangesRequested : Issues identified
-  UnderReview --> Approved : Review passed
-  ChangesRequested --> [*]
-  Approved --> [*]
-}
-
-note right of Available : Task bounty displayed\nto all eligible Goons
-
-note right of InProgress : Bounty reserved\nfor assigned user
-
-note right of Completed : Bounty awarded\nto user account
-
-note right of Overdue : Penalty may apply\nbased on delay
 
 @enduml
 ```
@@ -662,17 +873,6 @@ entity "licenses" as licenses {
   * created_at : TIMESTAMP
 }
 
-entity "audit_logs" as audit_logs {
-  * id : INT PRIMARY KEY
-  --
-  * user_id : INT FOREIGN KEY
-  * action : VARCHAR(50)
-  * entity_type : VARCHAR(50)
-  * entity_id : INT
-  * timestamp : TIMESTAMP
-  * details : JSON
-}
-
 entity "bounties" as bounties {
   * id : INT PRIMARY KEY
   --
@@ -689,7 +889,6 @@ users ||--o{ tasks : "created_by"
 users ||--o{ tasks : "assigned_to"
 users ||--o{ notifications : "user_id"
 users ||--|| licenses : "user_id"
-users ||--o{ audit_logs : "user_id"
 users ||--o{ bounties : "user_id"
 tasks ||--|| bounties : "task_id"
 

@@ -96,7 +96,6 @@ package "Data Access Layer" {
   [User Repository] as UserRepo
   [Task Repository] as TaskRepo
   [Notification Repository] as NotifRepo
-  [Audit Repository] as AuditRepo
 }
 
 package "Database Layer" {
@@ -104,7 +103,6 @@ package "Database Layer" {
     [Users Table] as UsersTable
     [Tasks Table] as TasksTable
     [Notifications Table] as NotifTable
-    [Audit Logs Table] as AuditTable
     [Licenses Table] as LicensesTable
   }
 }
@@ -143,13 +141,11 @@ API --> AnalyticsSvc : Analytics
 UserSvc --> UserRepo : Data Access
 TaskSvc --> TaskRepo : Data Access
 NotifSvc --> NotifRepo : Data Access
-BountySvc --> AuditRepo : Audit Logging
 
 ' Database relationships
 UserRepo --> UsersTable : CRUD Operations
 TaskRepo --> TasksTable : CRUD Operations
 NotifRepo --> NotifTable : CRUD Operations
-AuditRepo --> AuditTable : CRUD Operations
 UserRepo --> LicensesTable : License Management
 
 ' External Services relationships
@@ -369,17 +365,6 @@ enum LicenseStatus {
   REVOKED
 }
 
-class AuditLog {
-  -id: number
-  -userId: number
-  -action: string
-  -entityType: string
-  -entityId: number
-  -timestamp: Date
-  -details: string
-  +record(action: string, entity: any): void
-}
-
 class ProjectBoard {
   -id: number
   -name: string
@@ -396,7 +381,6 @@ User ||--o{ Task : assigned_to
 User ||--o{ Bounty : receives
 User ||--o{ Notification : receives
 User ||--|| License : has
-User ||--o{ AuditLog : generates
 
 Task ||--|| Bounty : has
 Task }o--|| ProjectBoard : belongs_to
@@ -496,7 +480,6 @@ API -> TS: completeTask(taskId)
 TS -> DB: UPDATE tasks SET status='completed'
 TS -> BS: processBounty(taskId, userId)
 BS -> DB: UPDATE users SET balance=balance+bounty
-BS -> DB: INSERT INTO audit_logs
 BS -> NS: notifyBountyAwarded(userId, amount)
 TS --> API: completion confirmation
 API --> F: success response
@@ -745,21 +728,12 @@ class Notification {
   -readStatus: boolean
 }
 
-class AuditLog {
-  -id: number
-  -userId: number
-  -action: string
-  -timestamp: Date
-  -details: string
-}
-
 User ||--o{ Task : creates
 User ||--o{ Task : assigned_to
 User ||--o{ Bounty : receives
 User ||--|| License : has
 Task ||--|| Bounty : has
 User ||--o{ Notification : receives
-User ||--o{ AuditLog : generates
 
 @enduml
 ```

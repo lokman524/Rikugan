@@ -80,7 +80,7 @@ Software Interfaces
 
 **Database Interface:**
 - **MySQL 8.0+**: Primary database for persistent data storage
-- **Database Schema**: Tables for users, tasks, bounties, notifications, and audit logs
+- **Database Schema**: Tables for users, tasks, bounties, notifications, and licenses
 - **Connection Pooling**: Efficient database connection management
 - **Data Validation**: Server-side validation for all database operations
 

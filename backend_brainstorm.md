@@ -163,7 +163,6 @@ CREATE TABLE attachments (
 - **Teams/Organizations**: Should users be able to create teams?
 - **Reviews/Ratings**: How do we handle user ratings after bounty completion?
 - **Notifications**: Do we need a separate notifications table?
-- **Audit Logs**: Should we track all user actions for security?
 - **API Keys**: Do we need user-generated API keys for integrations?
 
 ## 2. Backend API Architecture
@@ -562,7 +561,6 @@ CORS_ORIGIN=http://localhost:3000
 - Personal data encryption at rest
 - Secure file upload validation
 - API key rotation and secure storage
-- Audit logging for sensitive operations
 - GDPR compliance for user data
 - Regular security vulnerability scans
 
