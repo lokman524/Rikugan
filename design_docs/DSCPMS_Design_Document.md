@@ -475,7 +475,7 @@ Generates, stores, and delivers notifications for system events, providing users
 | PUT /api/v1/notifications/:id/read | Mark notification as read |
 | PUT /api/v1/notifications/mark-all-read | Mark all notifications as read |
 | DELETE /api/v1/notifications/:id | Delete notification |
-| POST /api/v1/notifications/preferences | Update notification preferences |
+
 
 **Files:**  
 The `notifications` module is contained in `backend/src/notifications/` including NotificationController, NotificationService, and Notification model.
