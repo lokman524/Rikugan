@@ -1,6 +1,31 @@
 const NotificationService = require('../services/NotificationService');
 
 class NotificationController {
+  /**
+   * 1user notifications
+   * 
+   * Request:
+   * - Query params:
+   *   - unread (optional): 'true' to get only unread notifications
+   * - Headers:
+   *   - Authorization: Bearer {token}
+   * 
+   * Response:
+   * {
+   *   success: true,
+   *   data: [
+   *     {
+   *       id: number,
+   *       userId: number,
+   *       type: string,
+   *       message: string,
+   *       relatedId: number,
+   *       isRead: boolean,
+   *       createdAt: timestamp
+   *     }
+   *   ]
+   * }
+   */
   async getUserNotifications(req, res, next) {
     try {
       const unreadOnly = req.query.unread === 'true';
@@ -18,6 +43,21 @@ class NotificationController {
     }
   }
 
+  /**
+   * Get unread notification count
+   * 
+   * Request:
+   * - Headers:
+   *   - Authorization: Bearer {token}
+   * 
+   * Response:
+   * {
+   *   success: true,
+   *   data: {
+   *     count: number
+   *   }
+   * }
+   */
   async getUnreadCount(req, res, next) {
     try {
       const count = await NotificationService.getUnreadCount(req.user.id);
@@ -31,6 +71,30 @@ class NotificationController {
     }
   }
 
+  /**
+   * Mark notification as read
+   * 
+   * Request:
+   * - URL params:
+   *   - id: notification ID
+   * - Headers:
+   *   - Authorization: Bearer {token}
+   * 
+   * Response:
+   * {
+   *   success: true,
+   *   message: 'Notification marked as read',
+   *   data: {
+   *     id: number,
+   *     userId: number,
+   *     type: string,
+   *     message: string,
+   *     relatedId: number,
+   *     isRead: boolean,
+   *     createdAt: timestamp
+   *   }
+   * }
+   */
   async markAsRead(req, res, next) {
     try {
       const notification = await NotificationService.markAsRead(
@@ -48,6 +112,19 @@ class NotificationController {
     }
   }
 
+  /**
+   * Mark all notifications as read
+   * 
+   * Request:
+   * - Headers:
+   *   - Authorization: Bearer {token}
+   * 
+   * Response:
+   * {
+   *   success: true,
+   *   message: 'All notifications marked as read'
+   * }
+   */
   async markAllAsRead(req, res, next) {
     try {
       await NotificationService.markAllAsRead(req.user.id);
@@ -61,6 +138,21 @@ class NotificationController {
     }
   }
 
+  /**
+   * Delete a notification
+   * 
+   * Request:
+   * - URL params:
+   *   - id: notification ID
+   * - Headers:
+   *   - Authorization: Bearer {token}
+   * 
+   * Response:
+   * {
+   *   success: true,
+   *   message: 'Notification deleted'
+   * }
+   */
   async deleteNotification(req, res, next) {
     try {
       await NotificationService.deleteNotification(req.params.id, req.user.id);
