@@ -3,6 +3,18 @@ const Task = require('./Task');
 const Notification = require('./Notification');
 const License = require('./License');
 const Transaction = require('./Transaction');
+const Team = require('./Team');
+
+// Team - User relationships
+Team.hasMany(User, { as: 'members', foreignKey: 'teamId' });
+User.belongsTo(Team, { as: 'team', foreignKey: 'teamId' });
+
+// Team - License relationships
+Team.hasOne(License, { as: 'license', foreignKey: 'teamId' });
+License.belongsTo(Team, { as: 'team', foreignKey: 'teamId' });
+
+// Team - Creator relationship
+Team.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
 
 // User - Task relationships
 User.hasMany(Task, { as: 'createdTasks', foreignKey: 'createdBy' });
@@ -54,5 +66,6 @@ module.exports = {
   Notification,
   License,
   Transaction,
+  Team,
   UserLicense
 };
