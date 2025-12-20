@@ -1,4 +1,4 @@
-# Rikugan - Architecture and Design Document
+# Rikugan - Architecture and Design Document v1
 
 ## Table of Contents
 
@@ -55,7 +55,7 @@ The main purpose of Rikugan is to provide a gamified project management platform
 - **Role-based User Management**: Three distinct user roles (Goons, Hashira, Oyakatasama) with escalating privileges
 - **Bounty-based Task System**: Tasks with monetary rewards to incentivize completion
 - **Kanban Board Interface**: Visual task management with drag-and-drop functionality
-- **Regular Notifications**: Regular updates on task assignments, completions, and deadlines
+- **Real-time Notifications**: Instant updates on task assignments, completions, and deadlines
 - **License Management**: Controlled access through license-based authorization
 - **Analytics and Reporting**: Performance metrics and progress tracking
 - **Deadline Management**: Automated penalty system for missed deadlines
@@ -87,7 +87,8 @@ The following table contains the most important personas for this application:
 | **Junior Programmers (Goons)** | End users seeking task opportunities with monetary incentives and skill development |
 | **Senior Programmers (Hashira)** | Team leads managing projects and creating task assignments with appropriate bounties |
 | **Administrators (Oyakatasama)** | System administrators controlling access, licenses, and overall system configuration |
-
+| **Course Instructors** | Evaluating project architecture, implementation quality, and adherence to requirements |
+| **Project Stakeholders** | Interested in system adoption for real-world project management scenarios |
 
 ## 2. Architecture Constraints
 
@@ -103,7 +104,7 @@ The constraints on this project are reflected in the final solution. This sectio
 | TC3 | Node.js Backend | Backend implementation must use Node.js to enable full-stack JavaScript development |
 | TC4 | Open Source Dependencies | All third-party libraries must be available under compatible open source licenses |
 | **Database Constraints** |
-| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence|
+| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence to meet course requirements |
 | TC6 | Relational Data Model | Database design must follow normalized relational principles |
 | **Deployment Constraints** |
 | TC7 | Docker Containerization | Application must be containerized using Docker for consistent deployment |
@@ -152,6 +153,7 @@ Experienced developers who create and manage tasks, set bounty amounts, and moni
 
 **Oyakatasama (System Administrators)**
 System administrators responsible for user account management, license distribution, system configuration, and overall platform oversight. They have full access to all system functions.
+
 
 ### 3.2. Technical Context
 
@@ -240,13 +242,13 @@ The system is decomposed into layered architecture with clear responsibilities:
 
 #### 5.1.1. Frontend Components (Blackbox)
 
-**Responsibility**
-The frontend provides an intuitive, responsive web interface for all user interactions with role-based component rendering and Regular updates.
+**Intent/Responsibility**
+The frontend provides an intuitive, responsive web interface for all user interactions with role-based component rendering and real-time updates.
 
 **Interfaces**
 - REST API consumption via HTTP/HTTPS
 - Browser local storage for client-side state
-- Regular updates through API polling
+- Real-time updates through API polling
 
 **Files**
 All frontend components are contained within the `frontend/src/` directory structure, organized by feature and component type.
@@ -327,7 +329,7 @@ The backend API is functionally decomposed to separate responsibilities. Each mo
 | **users** | User account management, profile operations, team membership |
 | **tasks** | Task lifecycle management, assignment logic, status tracking |
 | **bounties** | Bounty calculation, payment processing, balance management |
-| **notifications** | Regular notification generation and delivery, user notification preferences |
+| **notifications** | Real-time notification generation and delivery, user notification preferences |
 | **licenses** | Team license validation, expiry checking, access control |
 | **teams** | Team management, member operations, team statistics |
 
@@ -460,7 +462,7 @@ The `bounties` module is contained in `backend/src/bounties/` including BountyCo
 #### 5.5.5. notifications (Blackbox)
 
 **Intent/Responsibility**  
-Generates, stores, and delivers notifications for system events, providing users with Regular updates about tasks, bounties, and team activities.
+Generates, stores, and delivers notifications for system events, providing users with real-time updates about tasks, bounties, and team activities.
 
 **Interfaces:**
 
@@ -471,7 +473,7 @@ Generates, stores, and delivers notifications for system events, providing users
 | PUT /api/v1/notifications/:id/read | Mark notification as read |
 | PUT /api/v1/notifications/mark-all-read | Mark all notifications as read |
 | DELETE /api/v1/notifications/:id | Delete notification |
-
+| POST /api/v1/notifications/preferences | Update notification preferences |
 
 **Files:**  
 The `notifications` module is contained in `backend/src/notifications/` including NotificationController, NotificationService, and Notification model.
@@ -783,81 +785,28 @@ User interaction with Rikugan involves several key workflows that demonstrate th
 
 ![alt text](Auth.png)
 
-### 6.2. Task Assignment and Completion
+### 6.2. User Registration Flow
+
+![alt text](user_registration_flow.png)
+
+**Registration Flow Key Points:**
+- Only Oyakatasama (administrators) can create new user accounts
+- Username and email uniqueness is enforced at the database level
+- Passwords are hashed using bcrypt before storage
+- Role assignment (Goon, Hashira, Oyakatasama) is done during registration
+- Optional email notification can be sent to new users with their login credentials
+- No self-registration capability for security reasons
+- License is team-based, not assigned per user
+
+### 6.3. Task Assignment and Completion
 
 ![alt text](TaskFlow.png)
 
-### 6.3. Notification System Flow
+### 6.4. Notification System Flow
 
 ![alt text](notificationflow.png)
 
-### 6.4. License Validation and Team Access Control
-
-```plantuml
-@startuml Rikugan_License_Flow
-!theme plain
-title License Validation and Team Access Control Flow
-
-actor "Oyakatasama\n(Admin)" as Admin
-actor "Team Member\n(Goon/Hashira)" as User
-participant "Frontend" as F
-participant "API Gateway" as API
-participant "Auth Middleware" as Auth
-participant "Database" as DB
-
-== License Issuance (Admin) ==
-Admin -> F: Create team with license
-F -> API: POST /api/v1/teams
-API -> Auth: verifyRole(OYAKATASAMA)
-Auth --> API: authorized
-API -> DB: INSERT INTO teams (name, description)
-DB --> API: team_id
-API -> DB: INSERT INTO licenses (team_id, license_key, status='active')
-DB --> API: license created
-API --> F: success response
-F --> Admin: Team and license created
-
-== User Login with License Check ==
-User -> F: Enter credentials
-F -> API: POST /api/v1/auth/login
-API -> DB: SELECT user, team, license WHERE username=?
-DB --> API: user + team + license data
-
-alt License Exists and Active
-    API -> API: generateJWT(user, team, role)
-    API --> F: JWT token
-    F --> User: Access granted
-else No License or Revoked
-    API --> F: 403 Forbidden
-    F --> User: "Team license missing or revoked"
-end
-
-== Feature Access (Automatic Validation) ==
-User -> F: Access any feature
-F -> API: API call with JWT
-API -> Auth: validateJWT(token)
-Auth -> Auth: check token validity
-alt JWT valid
-    Auth --> API: proceed
-    API --> F: feature response
-else JWT invalid
-    Auth --> API: 401 Unauthorized
-    API --> F: error
-    F --> User: "Please login again"
-end
-
-== License Revocation (Admin) ==
-Admin -> F: Revoke team license
-F -> API: PUT /api/v1/licenses/{teamId}/revoke
-API -> Auth: verifyRole(OYAKATASAMA)
-API -> DB: UPDATE licenses SET status='revoked'
-DB --> API: success
-API --> F: revoked
-F --> Admin: License revoked
-note right: Users must re-login to be logged out
-
-@enduml
-```
+### 6.5. License Validation and Team Access Control
 
 ![alt text](license_flow.png)
 
@@ -1224,7 +1173,7 @@ Choose appropriate technologies for a web-based project management application t
 **Constraints:**
 - Must use modern web technologies suitable for academic project
 - Should provide good learning opportunities for students
-- Must support role-based access control
+- Must support role-based access control and real-time features
 - Need to complete within one academic semester
 
 **Considered Alternatives:**

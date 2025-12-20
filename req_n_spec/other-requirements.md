@@ -14,7 +14,7 @@ Database Requirements
 - User table: id, username, email, password_hash, role, balance, created_at, updated_at
 - Tasks table: id, title, description, bounty_amount, deadline, status, created_by, assigned_to, created_at, updated_at
 - Notifications table: id, user_id, type, message, read_status, created_at
-- Licenses table: id, user_id, license_key, expiry_date, status, created_at
+- Licenses table: id, license_key, expiry_date, status, max_users, created_at (one record per team deployment)
 
 **Data Integrity Requirements:**
 - Foreign key constraints for data relationships
@@ -125,44 +125,29 @@ Testing Requirements
 - Sample tasks and bounties for testing scenarios
 - Database cleanup procedures between test runs
 
-**Testing Environment:**
-- Separate test database instance
-- Mock external services and dependencies
-- Automated test data generation and cleanup
-- Performance testing under simulated load
+Deployment and Initialization Requirements
+------------------------------------------
 
-Backup and Recovery Requirements
---------------------------------
+**Initial System Setup:**
+- Database migration scripts shall create required schema (users, teams, tasks, licenses, notifications tables)
+- Migration scripts shall execute automatically on first deployment via Docker Compose
+- No default users or teams shall be pre-created
 
-**Development Environment:**
-- Daily automated database backups
-- Source code backup through Git repository
-- Configuration file backup and version control
-- Recovery procedures documented and tested
+**License Configuration:**
+- Valid license keys shall be configured in environment variables or configuration files
+- License configuration format:
+  - License key (string)
+  - Expiry date (date)
+  - Maximum users allowed (integer)
+  - Status (active/inactive)
+- Example: RIKUGAN-2024-TEAM-A, 2025-12-31, 50, active
+- System shall load license configuration at startup and maintain in memory
+- License keys shall not be stored in database until assigned to a team
 
-**Data Recovery:**
-- Point-in-time recovery capability for database
-- Rollback procedures for problematic deployments
-- Data export functionality for migration purposes
-- Recovery testing performed monthly during development
+**Database Seeding (Development Only):**
+- Development environment may include sample teams, users, and tasks for testing purposes
+- Production environment shall start with empty database (schema only)
+- Seed scripts shall be optional and clearly marked for development use only
 
-Monitoring and Logging Requirements
-----------------------------------
 
-**Application Logging:**
-- Structured logging with appropriate log levels (DEBUG, INFO, WARN, ERROR)
-- User action logging for audit purposes
-- Performance metrics logging for optimization
-- Error logging with stack traces for debugging
 
-**System Monitoring:**
-- Database performance monitoring
-- Application response time tracking
-- Resource utilization monitoring (CPU, memory, disk)
-- User activity monitoring for usage analytics
-
-**Log Management:**
-- Log rotation to prevent disk space issues
-- Log retention policy (30 days for development)
-- Centralized logging for multi-container environment
-- Log analysis tools for troubleshooting

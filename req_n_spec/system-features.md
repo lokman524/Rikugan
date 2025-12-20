@@ -7,7 +7,7 @@ User Authentication and Authorization
 ### Description and Priority
 **Priority: High** - Essential for system security and role-based access control
 
-This feature provides secure user registration, login, and role-based access control for the three user types: Goons, Hashira, and Oyakatasama. The system implements license-based access management to control who can join the "Demon Slayer Corps."
+This feature provides secure user registration, login, and role-based access control for the three user types: Goons, Hashira, and Oyakatasama. The system implements team-based license validation to control task creation limits.
 
 ### Stimulus/Response Sequences
 1. User attempts to access the system → System redirects to login page if not authenticated
@@ -23,7 +23,6 @@ The system shall allow administrators (Oyakatasama) to create new user accounts 
 - Email address (valid format)
 - Initial password (minimum 8 characters)
 - Assigned role (Goon, Hashira, or Oyakatasama)
-- License allocation for system access
 
 #### REQ-2: User Login
 The system shall authenticate users using username/email and password combination and maintain session state for 8 hours of inactivity.
@@ -35,7 +34,7 @@ The system shall enforce the following access levels:
 - **Oyakatasama**: All functions plus user management and system administration
 
 #### REQ-4: License Management
-The system shall implement a license-based access control where only teams with valid licenses can access the system.
+The system shall implement a team-based license system where one hard-coded license key is configured per team deployment. Without a valid license, the entire project shall be inaccessible. The license is managed through environment configuration, not through the admin interface.
 
 Task Management System
 ----------------------
@@ -85,7 +84,7 @@ User Profile and Reward System
 ------------------------------
 
 ### Description and Priority
-**Priority: High** - Important for gamification and user engagement
+**Priority: Medium** - Important for gamification and user engagement
 
 This feature manages user profiles, tracks earnings, and implements the reward/penalty system.
 
@@ -93,7 +92,7 @@ This feature manages user profiles, tracks earnings, and implements the reward/p
 1. User completes task → System awards bounty to user's account
 2. User misses deadline → System applies penalty from user's account
 3. User views profile → System displays current balance and task history
-
+4. User achieves milestone → System displays achievement notification
 
 ### Functional Requirements
 
@@ -108,7 +107,7 @@ The system shall maintain user profiles containing:
 The system shall automatically credit user accounts with bounty amounts upon successful task completion.
 
 #### REQ-13: Penalty System
-The system shall apply monetary penalties for missed deadlines or unsatisfactory task completion.
+The system shall apply configurable monetary penalties for missed deadlines or unsatisfactory task completion.
 
 #### REQ-14: Performance Tracking
 The system shall track and display user performance metrics including:
@@ -123,12 +122,13 @@ Notification System
 ### Description and Priority
 **Priority: Medium** - Important for user engagement and communication
 
-This feature provides regular notifications for task assignments, deadlines, and system events.
+This feature provides real-time notifications for task assignments, deadlines, and system events.
 
 ### Stimulus/Response Sequences
 1. Task assigned to user → System sends notification to user
 2. Deadline approaching → System sends reminder notification
 3. Task status changed → System notifies relevant stakeholders
+4. User achieves milestone → System sends congratulatory notification
 
 ### Functional Requirements
 
@@ -138,5 +138,55 @@ The system shall notify users when:
 - Task deadlines are approaching (24 hours before)
 - Task status is updated by team members
 - Tasks are completed or cancelled
+
+#### REQ-16: Achievement Notifications
+The system shall notify users of achievements such as:
+- First task completion
+- Earning milestones
+- Performance improvements
+- Role promotions
+
+Team Creation and License Activation
+------------------------------------
+
+### Description and Priority
+**Priority: High** - Critical for initial team deployment and license activation
+
+This feature manages the creation of new teams and associates them with valid license keys, enabling Oyakatasama users to establish their team environment and gain access to system features.
+
+### Stimulus/Response Sequences
+1. Oyakatasama registers account through registration interface
+2. Oyakatasama logs in → System detects no team assignment
+3. System redirects to team creation panel
+4. Oyakatasama enters team name and license key → System validates license
+5. If valid → Team created and Oyakatasama assigned to team
+6. If invalid → Error message displayed, retry allowed
+
+### Functional Requirements
+
+#### REQ-17: Registration Interface
+The system shall allow users to register with role selection (Goon, Hashira, or Oyakatasama) through a unified registration interface.
+
+#### REQ-18: Team Creation Panel
+The system shall redirect users without team assignment to a team creation panel upon login where they can:
+- Enter team name
+- Enter license key
+- Submit to create and join team
+
+#### REQ-19: License Validation
+The system shall validate entered license keys against hard-coded valid licenses by:
+- Checking if license key exists in system configuration
+- Checking if license is not already assigned to another team
+- Checking if license has not expired
+- Verifying license has available user capacity
+
+#### REQ-20: Team Assignment
+Upon successful license validation, the system shall:
+- Create new team entity with provided name
+- Assign validated license to the team
+- Add the Oyakatasama user to the team
+- Grant full access to system features
+
+
 
 

@@ -1,8 +1,8 @@
-# DSCPMS Backend - Complete Implementation Summary
+# Rikugan Backend - Complete Implementation Summary
 
 ## ✅ What Has Been Built
 
-A complete, production-ready REST API backend for the Demon Slayer Corps Project Management System with the following features:
+A complete, production-ready REST API backend for Rikugan with the following features:
 
 ### Core Features Implemented
 
@@ -231,7 +231,7 @@ Pre-populated with 6 users and 5 tasks:
 - inosuke / Goon123! (Goon) - $900
 
 **License:**
-- DSCPMS-2024-UNLIMITED-ACCESS (assigned to all users)
+- RIKUGAN-2024-UNLIMITED-ACCESS (assigned to all users)
 
 ### Package Scripts
 ```json
@@ -252,10 +252,10 @@ PORT=3000
 API_VERSION=v1
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=dscpms
+DB_NAME=rikugan
 DB_USER=root
 DB_PASSWORD=root
-JWT_SECRET=dscpms_secret_key_2026_demon_slayer_corps_project_management_system
+JWT_SECRET=rikugan_secret_key_2026
 JWT_EXPIRES_IN=8h
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
