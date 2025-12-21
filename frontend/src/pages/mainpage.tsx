@@ -17,6 +17,11 @@ const DashboardPage: React.FC = () => {
 		{ id: "taskboard", label: "Taskboard", icon: TaskIcon },
 	];
 
+	const componentMap: Record<string, React.ReactNode> = {
+		dashboard: <Dashboard user={user} />,
+		taskboard: <Taskboard user={user} />,
+	};
+
 	return (
 		<div className="h-screen bg-gray-50 dark:bg-gray-900 flex">
 			<Sidebar
@@ -27,8 +32,7 @@ const DashboardPage: React.FC = () => {
 			/>
 
 			{/* Main Content */}
-			{currentItemId === "dashboard" && <Dashboard user={user} />}
-			{currentItemId === "taskboard" && <Taskboard user={user} />}
+			{componentMap[currentItemId]}
 		</div>
 	);
 };
