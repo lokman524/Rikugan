@@ -16,19 +16,24 @@ import UserProfile from "@/components/UserProfile";
 interface SidebarProps {
 	isOpen: boolean;
 	onClose: () => void;
+	menuItems: {
+		id: string;
+		label: string;
+		icon: React.FC<React.SVGProps<SVGSVGElement>>;
+	}[];
+	setCurrentItemId: (id: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+	isOpen,
+	onClose,
+	menuItems,
+	setCurrentItemId,
+}) => {
 	const { user, logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
 	const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-	const menuItems = [
-		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
-		{ id: "wallet", label: "Wallet", icon: WalletIcon },
-		{ id: "tasks", label: "My Tasks", icon: TaskIcon },
-	];
 
 	const handleLogout = () => {
 		logout();
@@ -50,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 				className={`
         fixed left-0 top-0 h-full bg-white dark:bg-gray-900 shadow-lg z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        w-80 lg:relative lg:translate-x-0 lg:w-80
+        w-80 lg:relative lg:translate-x-0 lg:w-80 flex-shrink-0
       `}
 			>
 				<div className="p-6">
@@ -124,6 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 								}
 								onMouseEnter={() => setHoveredItem(item.id)}
 								onMouseLeave={() => setHoveredItem(null)}
+								onClick={() => setCurrentItemId(item.id)}
 							>
 								<span
 									className={`transition-colors duration-200 ${
