@@ -226,7 +226,7 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 								<select
 									className="rounded border border-gray-300 dark:bg-gray-700 dark:text-white px-2 py-1"
 									value={addMemberRole}
-									onChange={e => setAddMemberRole(e.target.value)}
+									onChange={(e) => setAddMemberRole(e.target.value)}
 								>
 									<option value="GOON">Goon</option>
 									<option value="HASHIRA">Hashira</option>
