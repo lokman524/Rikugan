@@ -26,6 +26,23 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	const [pendingTakeBounty, setPendingTakeBounty] = useState<Bounty | null>(
 		null
 	);
+	const [showMyTasks, setShowMyTasks] = useState(true);
+	const [showCreateTask, setShowCreateTask] = useState(false);
+	const [createTaskForm, setCreateTaskForm] = useState({
+		title: "",
+		description: "",
+		bountyAmount: "",
+		deadline: "",
+		priority: "MEDIUM",
+		tags: "",
+		estimatedHours: "",
+	});
+	const [bountyMin, setBountyMin] = useState(""); // for bounty amount filter
+	const [showManageTasks, setShowManageTasks] = useState(false);
+	const [manageTaskSelected, setManageTaskSelected] = useState<Bounty | null>(null);
+	const [showConfirmReview, setShowConfirmReview] = useState(false);
+	const [showConfirmComplete, setShowConfirmComplete] = useState(false);
+	const [pendingStatusTask, setPendingStatusTask] = useState<{bounty: Bounty, status: string} | null>(null);
 
 	// Mock bounties data - replace with actual API call
 	useEffect(() => {
@@ -116,7 +133,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		setFilteredBounties(mockBounties);
 	}, [user]);
 
-	// Collect all unique tags from bounties
+	// Collect all unique tags from ALL bounties (not just filtered)
 	const allTags = React.useMemo(() => {
 		const tagSet = new Set<string>();
 		bounties.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
@@ -148,8 +165,15 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 			filtered = filtered.filter((bounty) => bounty.tags.includes(tagFilter));
 		}
 
+		if (bountyMin) {
+			const min = parseFloat(bountyMin);
+			if (!isNaN(min)) {
+				filtered = filtered.filter((bounty) => bounty.bountyAmount >= min);
+			}
+		}
+
 		setFilteredBounties(filtered);
-	}, [searchTerm, priorityFilter, tagFilter, bounties]);
+	}, [searchTerm, priorityFilter, tagFilter, bountyMin, bounties]);
 
 	// Only show available and not taken bounties in main board
 	const availableBounties = filteredBounties.filter(
@@ -208,10 +232,150 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		setPendingTakeBounty(null);
 	};
 
+	const isHashiraOrOyakata =
+		user?.role === "HASHIRA" || user?.role === "OYAKATASAMA";
+
+	const handleCreateTaskInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+		const { name, value } = e.target;
+		setCreateTaskForm((prev) => ({
+			...prev,
+			[name]: value,
+		}));
+	};
+
+	const handleSubmitCreateTask = () => {
+		// For now, just add to local state (replace with API call)
+		const newTask: Bounty = {
+			id: (Math.random() * 100000).toFixed(0),
+			title: createTaskForm.title,
+			description: createTaskForm.description,
+			bountyAmount: parseFloat(createTaskForm.bountyAmount) || 0,
+			deadline: createTaskForm.deadline,
+			status: "AVAILABLE",
+			priority: createTaskForm.priority as "LOW" | "MEDIUM" | "HIGH",
+			createdBy: user?.username,
+			tags: createTaskForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
+			estimatedHours: parseInt(createTaskForm.estimatedHours) || undefined,
+		};
+		setBounties((prev) => [newTask, ...prev]);
+		setShowCreateTask(false);
+		setCreateTaskForm({
+			title: "",
+			description: "",
+			bountyAmount: "",
+			deadline: "",
+			priority: "MEDIUM",
+			tags: "",
+			estimatedHours: "",
+		});
+	};
+
+	// For create task: manage selected tags (from chips) and new tag input
+	const [selectedTags, setSelectedTags] = useState<string[]>([]);
+	const [newTagInput, setNewTagInput] = useState("");
+
+	// Update createTaskForm.tags when selectedTags or newTagInput changes
+	useEffect(() => {
+		const tags = [
+			...selectedTags,
+			...(newTagInput
+				.split(",")
+				.map((t) => t.trim())
+				.filter(Boolean)
+			),
+		];
+		setCreateTaskForm((prev) => ({
+			...prev,
+			tags: tags.join(","),
+		}));
+	}, [selectedTags, newTagInput]);
+
+	const handleTagChipClick = (tag: string) => {
+		setSelectedTags((prev) =>
+			prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+		);
+	};
+
+	// Update status for my tasks (with confirm for REVIEW)
+	const handleUpdateStatus = (bounty: Bounty, newStatus: "IN_PROGRESS" | "REVIEW") => {
+		if (newStatus === "REVIEW") {
+			setPendingStatusTask({ bounty, status: "REVIEW" });
+			setShowConfirmReview(true);
+			return;
+		}
+		setBounties((prev) =>
+			prev.map((b) =>
+				b.id === bounty.id
+					? { ...b, status: newStatus }
+					: b
+			)
+		);
+		setSelectedBounty((b) =>
+			b && b.id === bounty.id ? { ...b, status: newStatus } : b
+		);
+	};
+
+	const confirmSetReview = () => {
+		if (pendingStatusTask && pendingStatusTask.status === "REVIEW") {
+			const bounty = pendingStatusTask.bounty;
+			setBounties((prev) =>
+				prev.map((b) =>
+					b.id === bounty.id
+						? { ...b, status: "REVIEW" }
+						: b
+				)
+			);
+			setSelectedBounty((b) =>
+				b && b.id === bounty.id ? { ...b, status: "REVIEW" } : b
+			);
+		}
+		setShowConfirmReview(false);
+		setPendingStatusTask(null);
+	};
+
+	// Manage Tasks logic
+	const myCreatedTasks = bounties.filter((b) => b.createdBy === user?.username);
+
+	const handleManageTaskStatus = (bounty: Bounty, status: "IN_PROGRESS" | "COMPLETED") => {
+		if (status === "COMPLETED") {
+			setPendingStatusTask({ bounty, status: "COMPLETED" });
+			setShowConfirmComplete(true);
+			return;
+		}
+		setBounties((prev) =>
+			prev.map((b) =>
+				b.id === bounty.id
+					? { ...b, status }
+					: b
+			)
+		);
+		setManageTaskSelected((b) =>
+			b && b.id === bounty.id ? { ...b, status } : b
+		);
+	};
+
+	const confirmSetCompleted = () => {
+		if (pendingStatusTask && pendingStatusTask.status === "COMPLETED") {
+			const bounty = pendingStatusTask.bounty;
+			setBounties((prev) =>
+				prev.map((b) =>
+					b.id === bounty.id
+						? { ...b, status: "COMPLETED" }
+						: b
+				)
+			);
+			setManageTaskSelected((b) =>
+				b && b.id === bounty.id ? { ...b, status: "COMPLETED" } : b
+			);
+		}
+		setShowConfirmComplete(false);
+		setPendingStatusTask(null);
+	};
+
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
 			{/* Main Content */}
-			<div className="flex-1 lg:ml-0 transition-all duration-300 mr-80">
+			<div className={`flex-1 lg:ml-0 transition-all duration-300 ${showMyTasks ? "mr-80" : ""}`}>
 				{/* Header */}
 				<header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
 					<div className="flex items-center justify-between p-4">
@@ -220,14 +384,31 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 								Taskboard
 							</h1>
 						</div>
-						<div className="flex items-center space-x-4">
-							<div className="text-sm text-gray-600 dark:text-gray-400">
-								Welcome back,{" "}
-								<span className="font-semibold text-primary">
-									{user?.username}
-								</span>
-								!
-							</div>
+						{/* Button Bar */}
+						<div className="flex items-center space-x-2">
+							{isHashiraOrOyakata && (
+								<Button
+									variant="bordered"
+									onPress={() => setShowManageTasks(true)}
+								>
+									Manage Tasks
+								</Button>
+							)}
+							{isHashiraOrOyakata && (
+								<Button
+									color="primary"
+									variant="solid"
+									onPress={() => setShowCreateTask(true)}
+								>
+									Create Task
+								</Button>
+							)}
+							<Button
+								variant={showMyTasks ? "solid" : "bordered"}
+								onPress={() => setShowMyTasks((v) => !v)}
+							>
+								My Tasks
+							</Button>
 							<SimpleThemeToggle />
 						</div>
 					</div>
@@ -266,11 +447,17 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 								className="w-full lg:w-48"
 							>
 								<SelectItem key="ALL">All Tags</SelectItem>
-								{/* allTags.map is correct usage, no error here */}
 								{allTags.map((tag) => (
 									<SelectItem key={tag}>{tag}</SelectItem>
 								))}
 							</Select>
+							<Input
+								placeholder="Bounty Amount (Min)"
+								type="number"
+								value={bountyMin}
+								onChange={(e) => setBountyMin(e.target.value)}
+								className="w-full lg:w-48"
+							/>
 						</div>
 					</div>
 
@@ -301,53 +488,54 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 				</div>
 			</div>
 
-			{/* My Tasks Fixed Sidebar */}
-			<div className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 border-l border-gray-200 dark:border-gray-700 flex flex-col">
-				<div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-					<h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-						My Active Tasks
-					</h2>
-					{/* Remove Close button */}
-				</div>
-				<div className="p-4 overflow-y-auto flex-1">
-					{myTasks.length === 0 ? (
-						<p className="text-gray-500 dark:text-gray-400">No active tasks.</p>
-					) : (
-						<div className="space-y-4">
-							{myTasks.map((bounty) => (
-								<div
-									key={bounty.id}
-									className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-									onClick={() => handleBountyClick(bounty)}
-								>
-									<div className="font-semibold text-gray-900 dark:text-white truncate">
-										{bounty.title}
+			{/* My Tasks Sidebar */}
+			{showMyTasks && (
+				<div className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+					<div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+						<h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+							My Active Tasks
+						</h2>
+					</div>
+					<div className="p-4 overflow-y-auto flex-1">
+						{myTasks.length === 0 ? (
+							<p className="text-gray-500 dark:text-gray-400">No active tasks.</p>
+						) : (
+							<div className="space-y-4">
+								{myTasks.map((bounty) => (
+									<div
+										key={bounty.id}
+										className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+										onClick={() => handleBountyClick(bounty)}
+									>
+										<div className="font-semibold text-gray-900 dark:text-white truncate">
+											{bounty.title}
+										</div>
+										<div className="flex items-center text-xs mt-1 gap-2">
+											<span
+												className={`px-2 py-0.5 rounded ${
+													bounty.priority === "HIGH"
+														? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
+														: bounty.priority === "MEDIUM"
+															? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+															: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+												}`}
+											>
+												{bounty.priority}
+											</span>
+											<span className="text-gray-500 dark:text-gray-400">
+												{bounty.status}
+											</span>
+											<span className="ml-auto text-gray-600 dark:text-gray-300">
+												Due: {new Date(bounty.deadline).toLocaleDateString()}
+											</span>
+										</div>
 									</div>
-									<div className="flex items-center text-xs mt-1 gap-2">
-										<span
-											className={`px-2 py-0.5 rounded ${
-												bounty.priority === "HIGH"
-													? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
-													: bounty.priority === "MEDIUM"
-														? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-														: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-											}`}
-										>
-											{bounty.priority}
-										</span>
-										<span className="text-gray-500 dark:text-gray-400">
-											{bounty.status}
-										</span>
-										<span className="ml-auto text-gray-600 dark:text-gray-300">
-											Due: {new Date(bounty.deadline).toLocaleDateString()}
-										</span>
-									</div>
-								</div>
-							))}
-						</div>
-					)}
+								))}
+							</div>
+						)}
+					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Bounty Detail Modal */}
 			<Modal size="2xl" isOpen={isOpen} onClose={onClose}>
@@ -397,6 +585,31 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 											))}
 										</div>
 									</div>
+									{/* Update Status Button for My Task */}
+									{selectedBounty.assignedTo === user?.username &&
+										!["REVIEW", "COMPLETED", "CANCELLED"].includes(selectedBounty.status) && (
+											<div className="mt-4">
+												<h4 className="font-semibold mb-2">Update Status</h4>
+												<div className="flex gap-2">
+													<Button
+														size="sm"
+														variant={selectedBounty.status === "IN_PROGRESS" ? "solid" : "bordered"}
+														onPress={() => handleUpdateStatus(selectedBounty, "IN_PROGRESS")}
+														disabled={selectedBounty.status === "IN_PROGRESS"}
+													>
+														In Progress
+													</Button>
+													<Button
+														size="sm"
+														variant={selectedBounty.status === "REVIEW" ? "solid" : "bordered"}
+														onPress={() => handleUpdateStatus(selectedBounty, "REVIEW")}
+														disabled={selectedBounty.status === "REVIEW"}
+													>
+														In Review
+													</Button>
+												</div>
+											</div>
+										)}
 								</div>
 							</ModalBody>
 							<ModalFooter>
@@ -440,6 +653,229 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 					</ModalFooter>
 				</ModalContent>
 			</Modal>
+
+			{/* Confirm Review Status Modal */}
+			<Modal isOpen={showConfirmReview} onClose={() => { setShowConfirmReview(false); setPendingStatusTask(null); }}>
+				<ModalContent>
+					<ModalHeader>Confirm Status Change</ModalHeader>
+					<ModalBody>
+						Are you sure you want to set this task to <b>In Review</b>?
+						{pendingStatusTask && (
+							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+								<strong>{pendingStatusTask.bounty.title}</strong>
+							</div>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowConfirmReview(false); setPendingStatusTask(null); }}>
+							Cancel
+						</Button>
+						<Button color="primary" onPress={confirmSetReview}>
+							Confirm
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Manage Tasks Modal */}
+			<Modal isOpen={showManageTasks} onClose={() => { setShowManageTasks(false); setManageTaskSelected(null); }}>
+				<ModalContent>
+					<ModalHeader>Manage My Tasks</ModalHeader>
+					<ModalBody>
+						{!manageTaskSelected ? (
+							<div className="space-y-3">
+								{myCreatedTasks.length === 0 ? (
+									<p className="text-gray-500 dark:text-gray-400">No tasks created by you.</p>
+								) : (
+									<div className="space-y-2">
+										{myCreatedTasks.map((bounty) => (
+											<div
+												key={bounty.id}
+												className="border rounded p-2 flex justify-between items-center cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900"
+												onClick={() => setManageTaskSelected(bounty)}
+											>
+												<div>
+													<div className="font-semibold">{bounty.title}</div>
+													<div className="text-xs text-gray-500">{bounty.status}</div>
+												</div>
+												<div className="text-xs text-gray-400">
+													${bounty.bountyAmount.toFixed(2)}
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						) : (
+							<div>
+								<div className="mb-2">
+									<div className="font-bold text-lg">{manageTaskSelected.title}</div>
+									<div className="text-sm text-gray-500 mb-1">{manageTaskSelected.status}</div>
+									<div className="text-sm">{manageTaskSelected.description}</div>
+								</div>
+								<div className="flex gap-2 mt-2">
+									<Button
+										size="sm"
+										variant={manageTaskSelected.status === "IN_PROGRESS" ? "solid" : "bordered"}
+										onPress={() => handleManageTaskStatus(manageTaskSelected, "IN_PROGRESS")}
+										disabled={manageTaskSelected.status === "IN_PROGRESS"}
+									>
+										Set In Progress
+									</Button>
+									<Button
+										size="sm"
+										variant={manageTaskSelected.status === "COMPLETED" ? "solid" : "bordered"}
+										onPress={() => handleManageTaskStatus(manageTaskSelected, "COMPLETED")}
+										disabled={manageTaskSelected.status === "COMPLETED"}
+									>
+										Set Completed
+									</Button>
+									<Button
+										size="sm"
+										variant="light"
+										onPress={() => setManageTaskSelected(null)}
+									>
+										Back
+									</Button>
+								</div>
+							</div>
+						)}
+					</ModalBody>
+				</ModalContent>
+			</Modal>
+
+			{/* Confirm Complete Status Modal */}
+			<Modal isOpen={showConfirmComplete} onClose={() => { setShowConfirmComplete(false); setPendingStatusTask(null); }}>
+				<ModalContent>
+					<ModalHeader>Confirm Status Change</ModalHeader>
+					<ModalBody>
+						Are you sure you want to set this task to <b>Completed</b>?
+						{pendingStatusTask && (
+							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+								<strong>{pendingStatusTask.bounty.title}</strong>
+							</div>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowConfirmComplete(false); setPendingStatusTask(null); }}>
+							Cancel
+						</Button>
+						<Button color="primary" onPress={confirmSetCompleted}>
+							Confirm
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Create Task Modal */}
+			{isHashiraOrOyakata && (
+				<Modal isOpen={showCreateTask} onClose={() => setShowCreateTask(false)}>
+					<ModalContent>
+						<ModalHeader>Create New Task</ModalHeader>
+						<ModalBody>
+							<div className="space-y-3">
+								<Input
+									label="Title"
+									name="title"
+									value={createTaskForm.title}
+									onChange={handleCreateTaskInput}
+									required
+								/>
+								{/* Use native textarea instead of Input as="textarea" */}
+								<div>
+									<label className="block text-sm font-medium mb-1" htmlFor="create-desc">
+										Description
+									</label>
+									<textarea
+										id="create-desc"
+										name="description"
+										className="w-full rounded border border-gray-300 dark:bg-gray-800 dark:text-white p-2"
+										value={createTaskForm.description}
+										onChange={handleCreateTaskInput}
+										required
+										rows={3}
+									/>
+								</div>
+								<Input
+									label="Bounty Amount"
+									name="bountyAmount"
+									type="number"
+									value={createTaskForm.bountyAmount}
+									onChange={handleCreateTaskInput}
+									required
+								/>
+								<Input
+									label="Deadline"
+									name="deadline"
+									type="date"
+									value={createTaskForm.deadline}
+									onChange={handleCreateTaskInput}
+									required
+								/>
+								<Select
+									label="Priority"
+									name="priority"
+									selectedKeys={[createTaskForm.priority]}
+									onSelectionChange={(keys) =>
+										setCreateTaskForm((prev) => ({
+											...prev,
+											priority: Array.from(keys)[0] as string,
+										}))
+									}
+								>
+									<SelectItem key="HIGH">High</SelectItem>
+									<SelectItem key="MEDIUM">Medium</SelectItem>
+									<SelectItem key="LOW">Low</SelectItem>
+								</Select>
+								{/* Tag selection: chips for existing tags, input for new tags */}
+								<div>
+									<label className="block text-sm font-medium mb-1">
+										Tags
+									</label>
+									<div className="flex flex-wrap gap-2 mb-2">
+										{allTags.map((tag) => (
+											<button
+												type="button"
+												key={tag}
+												className={`px-2 py-1 rounded text-sm border ${
+													selectedTags.includes(tag)
+														? "bg-primary-600 text-white border-primary-600"
+														: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300"
+												}`}
+												onClick={() => handleTagChipClick(tag)}
+											>
+												{tag}
+											</button>
+										))}
+									</div>
+									<Input
+										label="Add new tags (comma separated)"
+										name="newtags"
+										value={newTagInput}
+										onChange={(e) => setNewTagInput(e.target.value)}
+										placeholder="e.g. Backend, Urgent"
+									/>
+								</div>
+								<Input
+									label="Estimated Hours"
+									name="estimatedHours"
+									type="number"
+									value={createTaskForm.estimatedHours}
+									onChange={handleCreateTaskInput}
+								/>
+							</div>
+						</ModalBody>
+						<ModalFooter>
+							<Button variant="light" onPress={() => setShowCreateTask(false)}>
+								Cancel
+							</Button>
+							<Button color="primary" onPress={handleSubmitCreateTask}>
+								Create
+							</Button>
+						</ModalFooter>
+					</ModalContent>
+				</Modal>
+			)}
 		</div>
 	);
 };
