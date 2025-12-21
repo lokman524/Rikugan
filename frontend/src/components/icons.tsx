@@ -1,3 +1,26 @@
+// Team Management Icon
+export const TeamManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+	<svg
+		viewBox="0 0 24 24"
+		fill="none"
+		xmlns="http://www.w3.org/2000/svg"
+		width="1em"
+		height="1em"
+		stroke="currentColor"
+		strokeWidth={1.5}
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		{...props}
+	>
+		<circle cx="7" cy="10" r="3" fill="currentColor" fillOpacity="0.12" />
+		<circle cx="17" cy="10" r="3" fill="currentColor" fillOpacity="0.12" />
+		<circle cx="12" cy="17" r="3" fill="currentColor" fillOpacity="0.12" />
+		<circle cx="7" cy="10" r="2" stroke="currentColor" strokeWidth={1.5} />
+		<circle cx="17" cy="10" r="2" stroke="currentColor" strokeWidth={1.5} />
+		<circle cx="12" cy="17" r="2" stroke="currentColor" strokeWidth={1.5} />
+		<path d="M9.5 12.5L12 15M14.5 12.5L12 15" stroke="currentColor" strokeWidth={1.5} />
+	</svg>
+);
 // License Icon
 export const LicenseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 	<svg

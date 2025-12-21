@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const LicenseManagement: React.FC<{ user: any }> = ({ user }) => {
+const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 	// Mock bounties data - replace with actual API call
 	useEffect(() => {}, [user]);
 
@@ -11,4 +11,4 @@ const LicenseManagement: React.FC<{ user: any }> = ({ user }) => {
 	);
 };
 
-export default LicenseManagement;
+export default TeamManagement;
