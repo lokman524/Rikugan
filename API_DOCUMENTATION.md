@@ -18,122 +18,9 @@
 **Login Body:** `{ email, password }`  
 **Change Password:** `{ oldPassword, newPassword }`
 
----
+### Examples
 
-## 👥 Teams (`/teams`)
-
-| Method | Endpoint | Auth | Role | Description |
-|--------|----------|------|------|-------------|
-| GET | `/my-team` | Required | All | Get current user's team |
-| POST | `/` | Required | All | Create new team |
-| GET | `/` | Required | Admin | Get all teams |
-| GET | `/:id` | Required | All | Get team by ID |
-| PUT | `/:id` | Required | Hashira/Admin | Update team |
-| DELETE | `/:id` | Required | Admin | Delete team |
-| GET | `/:id/members` | Required | All | Get team members |
-| POST | `/:id/members` | Required | Hashira/Admin | Add member to team |
-| DELETE | `/:id/members/:userId` | Required | Hashira/Admin | Remove member |
-| GET | `/:id/statistics` | Required | All | Get team statistics |
-
----
-
-## ✅ Tasks (`/tasks`)
-
-| Method | Endpoint | Auth | Role | Description |
-|--------|----------|------|------|-------------|
-| GET | `/` | Required + License | All | Get all tasks (with filters) |
-| GET | `/board` | Required + License | All | Get kanban board view |
-| GET | `/statistics` | Required + License | All | Get task statistics |
-| GET | `/:id` | Required + License | All | Get task by ID |
-| POST | `/` | Required + License | Hashira/Admin | Create new task |
-| PUT | `/:id` | Required + License | All | Update task |
-| DELETE | `/:id` | Required + License | Hashira/Admin | Delete task |
-| POST | `/:id/assign` | Required + License | All | Assign task to self |
-| PUT | `/:id/status` | Required + License | All | Update task status |
-
-**Query Filters:** `status`, `priority`, `assignedTo`, `createdBy`  
-**Create Task:** `{ title, description, priority, deadline, bountyAmount, penaltyAmount }`  
-**Update Status:** `{ status }` (TODO/IN_PROGRESS/COMPLETED)
-
----
-
-## 💰 Bounty (`/bounty`)
-
-| Method | Endpoint | Auth | Role | Description |
-|--------|----------|------|------|-------------|
-| GET | `/statistics` | Required + License | All | Get bounty statistics |
-| GET | `/transactions/:userId` | Required + License | All | Get user transactions |
-| POST | `/adjust` | Required + License | Admin | Manually adjust user balance |
-
-**Adjust Balance:** `{ userId, amount, reason }`
-
----
-
-## 👤 Users (`/users`)
-
-| Method | Endpoint | Auth | Role | Description |
-|--------|----------|------|------|-------------|
-| GET | `/` | Required | Admin | Get all users |
-| GET | `/:id` | Required | All | Get user by ID |
-| GET | `/:id/profile` | Required | All | Get user profile with stats |
-| GET | `/:id/tasks` | Required | All | Get user's tasks |
-| GET | `/:id/transactions` | Required | All | Get user's transactions |
-| PUT | `/:id` | Required | All | Update user |
-| PUT | `/:id/role` | Required + License | Admin | Update user role |
-| DELETE | `/:id` | Required | Admin | Delete user |
-
-**Roles:** `GOON`, `HASHIRA`, `OYAKATASAMA`
-
----
-
-## 🔔 Notifications (`/notifications`)
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | Required + License | Get user notifications |
-| GET | `/unread` | Required + License | Get unread count |
-| PUT | `/:id/read` | Required + License | Mark notification as read |
-| PUT | `/mark-all-read` | Required + License | Mark all as read |
-| DELETE | `/:id` | Required + License | Delete notification |
-
----
-
-## 🎫 License (`/license`)
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/validate` | Public | Validate license key |
-| GET | `/me` | Required + License | Get current team's license |
-
-**Validate Body:** `{ licenseKey }`
-
----
-
-## 📋 Response Format
-
-**Success:** `{ success: true, data: {...} }`  
-**Error:** `{ success: false, message: "error description" }`
-
-## 🔑 Authorization Header
-```
-Authorization: Bearer <jwt_token>
-```
-
-## ⚠️ Task Workflow
-- **Create Task** → Hashira/Admin sets bounty/penalty
-- **Assign** → Goon claims task
-- **Complete** → On time = bounty paid | Late = penalty applied (10% of bounty)
-
-## 💡 Key Features
-- **Auto Penalty:** Late task completion deducts 10% of bounty from user balance
-- **License Validation:** Most operations require valid team license
-- **Role-Based Access:** Goon < Hashira < Oyakatasama (Admin)
-
----
-
-## 📝 Example API Calls
-
-### 1. Register New User
+#### Register New User
 ```bash
 POST /api/v1/auth/register
 Content-Type: application/json
@@ -166,13 +53,13 @@ Content-Type: application/json
 }
 ```
 
-### 2. Login
+#### Login
 ```bash
 POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "tanjiro@dscpms.com",
+  "username": "tanjiro",
   "password": "Goon123!"
 }
 ```
@@ -195,7 +82,164 @@ Content-Type: application/json
 }
 ```
 
-### 3. Create Task (Hashira/Admin Only)
+---
+
+## 👥 Teams (`/teams`)
+
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | `/my-team` | Required | All | Get current user's team |
+| POST | `/` | Required | All | Create new team |
+| GET | `/` | Required | Admin | Get all teams |
+| GET | `/:id` | Required | All | Get team by ID |
+| PUT | `/:id` | Required | Hashira/Admin | Update team |
+| DELETE | `/:id` | Required | Admin | Delete team |
+| GET | `/:id/members` | Required | All | Get team members |
+| POST | `/:id/members` | Required | Hashira/Admin | **Create new user account and add to team** |
+| DELETE | `/:id/members/:userId` | Required | Hashira/Admin | Remove member |
+| GET | `/:id/statistics` | Required | All | Get team statistics |
+
+**Add Member (Create User):** `{ username, email, password, role }` - Creates new account and assigns to team  
+**Note:** New workflow - Admin creates user account directly, user can then login immediately
+
+### Examples
+
+#### Create Team
+```bash
+POST /api/v1/teams/create
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "teamName": "Demon Slayer Corps",
+  "description": "Elite demon hunting organization",
+  "licenseKey": "DSCPMS-2024-UNLIMITED-ACCESS"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Team created successfully",
+  "data": {
+    "team": {
+      "id": 1,
+      "name": "Demon Slayer Corps",
+      "description": "Elite demon hunting organization",
+      "isActive": true,
+      "createdBy": 1
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+#### Add Member (Create User Account)
+```bash
+POST /api/v1/teams/1/members
+Authorization: Bearer <hashira_or_admin_token>
+Content-Type: application/json
+
+{
+  "username": "nezuko",
+  "email": "nezuko@dscpms.com",
+  "password": "TempPass123!",
+  "role": "GOON"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Member created and added to team successfully",
+  "data": {
+    "user": {
+      "id": 5,
+      "username": "nezuko",
+      "email": "nezuko@dscpms.com",
+      "role": "GOON",
+      "teamId": 1,
+      "balance": 0
+    },
+    "credentials": {
+      "username": "nezuko",
+      "email": "nezuko@dscpms.com",
+      "password": "TempPass123!"
+    }
+  }
+}
+```
+
+**Note:** Share the credentials with the new user so they can login immediately!
+
+#### Get Team Members
+```bash
+GET /api/v1/teams/1/members
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "username": "rengoku",
+      "email": "rengoku@dscpms.com",
+      "role": "HASHIRA",
+      "balance": 5000.00
+    },
+    {
+      "id": 5,
+      "username": "nezuko",
+      "email": "nezuko@dscpms.com",
+      "role": "GOON",
+      "balance": 0.00
+    }
+  ]
+}
+```
+
+#### Remove Team Member
+```bash
+DELETE /api/v1/teams/1/members/5
+Authorization: Bearer <hashira_or_admin_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Member removed successfully"
+}
+```
+
+---
+
+## ✅ Tasks (`/tasks`)
+
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | `/` | Required + License | All | Get all tasks (with filters) |
+| GET | `/board` | Required + License | All | Get kanban board view |
+| GET | `/statistics` | Required + License | All | Get task statistics |
+| GET | `/:id` | Required + License | All | Get task by ID |
+| POST | `/` | Required + License | Hashira/Admin | Create new task |
+| PUT | `/:id` | Required + License | All | Update task |
+| DELETE | `/:id` | Required + License | Hashira/Admin | Delete task |
+| POST | `/:id/assign` | Required + License | All | Assign task to self |
+| PUT | `/:id/status` | Required + License | All | Update task status |
+
+**Query Filters:** `status`, `priority`, `assignedTo`, `createdBy`  
+**Create Task:** `{ title, description, priority, deadline, bountyAmount, penaltyAmount }`  
+**Update Status:** `{ status }` (TODO/IN_PROGRESS/COMPLETED)
+
+### Examples
+
+#### Create Task (Hashira/Admin Only)
 ```bash
 POST /api/v1/tasks
 Authorization: Bearer <token>
@@ -228,7 +272,7 @@ Content-Type: application/json
 }
 ```
 
-### 4. Get All Tasks (with filters)
+#### Get All Tasks (with filters)
 ```bash
 GET /api/v1/tasks?status=AVAILABLE&priority=HIGH
 Authorization: Bearer <token>
@@ -256,7 +300,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 5. Assign Task to Self
+#### Assign Task to Self
 ```bash
 POST /api/v1/tasks/1/assign
 Authorization: Bearer <token>
@@ -280,7 +324,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 6. Update Task Status
+#### Update Task Status
 ```bash
 PUT /api/v1/tasks/1/status
 Authorization: Bearer <token>
@@ -321,7 +365,7 @@ Content-Type: application/json
 }
 ```
 
-### 7. Get Kanban Board
+#### Get Kanban Board
 ```bash
 GET /api/v1/tasks/board
 Authorization: Bearer <token>
@@ -354,7 +398,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 8. Get Task Statistics
+#### Get Task Statistics
 ```bash
 GET /api/v1/tasks/statistics
 Authorization: Bearer <token>
@@ -382,37 +426,21 @@ Authorization: Bearer <token>
 }
 ```
 
-### 9. Get User Profile with Stats
-```bash
-GET /api/v1/users/1/profile
-Authorization: Bearer <token>
-```
+---
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": 1,
-      "username": "tanjiro",
-      "email": "tanjiro@dscpms.com",
-      "role": "GOON",
-      "balance": 1500.00,
-      "bio": "Junior Developer - Eager to learn"
-    },
-    "statistics": {
-      "totalTasksCompleted": 8,
-      "totalBountiesEarned": 3200.00,
-      "totalPenaltiesPaid": 150.00,
-      "averageCompletionTime": "3.5 days",
-      "onTimeCompletionRate": 87.5
-    }
-  }
-}
-```
+## 💰 Bounty (`/bounty`)
 
-### 10. Get User Transactions
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | `/statistics` | Required + License | All | Get bounty statistics |
+| GET | `/transactions/:userId` | Required + License | All | Get user transactions |
+| POST | `/adjust` | Required + License | Admin | Manually adjust user balance |
+
+**Adjust Balance:** `{ userId, amount, reason }`
+
+### Examples
+
+#### Get User Transactions
 ```bash
 GET /api/v1/bounty/transactions/1
 Authorization: Bearer <token>
@@ -449,7 +477,96 @@ Authorization: Bearer <token>
 }
 ```
 
-### 11. Get Notifications
+#### Adjust User Balance (Admin Only)
+```bash
+POST /api/v1/bounty/adjust
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "amount": 1000,
+  "reason": "Performance bonus for excellent work"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "balanceBefore": 1500.00,
+    "balanceAfter": 2500.00,
+    "adjustmentAmount": 1000.00,
+    "reason": "Performance bonus for excellent work"
+  }
+}
+```
+
+---
+
+## 👤 Users (`/users`)
+
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | `/` | Required | Admin | Get all users |
+| GET | `/:id` | Required | All | Get user by ID |
+| GET | `/:id/profile` | Required | All | Get user profile with stats |
+| GET | `/:id/tasks` | Required | All | Get user's tasks |
+| GET | `/:id/transactions` | Required | All | Get user's transactions |
+| PUT | `/:id` | Required | All | Update user |
+| PUT | `/:id/role` | Required + License | Admin | Update user role |
+| DELETE | `/:id` | Required | Admin | Delete user |
+
+**Roles:** `GOON`, `HASHIRA`, `OYAKATASAMA`
+
+### Examples
+
+#### Get User Profile with Stats
+```bash
+GET /api/v1/users/1/profile
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "username": "tanjiro",
+      "email": "tanjiro@dscpms.com",
+      "role": "GOON",
+      "balance": 1500.00,
+      "bio": "Junior Developer - Eager to learn"
+    },
+    "statistics": {
+      "totalTasksCompleted": 8,
+      "totalBountiesEarned": 3200.00,
+      "totalPenaltiesPaid": 150.00,
+      "averageCompletionTime": "3.5 days",
+      "onTimeCompletionRate": 87.5
+    }
+  }
+}
+```
+
+---
+
+## 🔔 Notifications (`/notifications`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | Required + License | Get user notifications |
+| GET | `/unread` | Required + License | Get unread count |
+| PUT | `/:id/read` | Required + License | Mark notification as read |
+| PUT | `/mark-all-read` | Required + License | Mark all as read |
+| DELETE | `/:id` | Required + License | Delete notification |
+
+### Examples
+
+#### Get Notifications
 ```bash
 GET /api/v1/notifications
 Authorization: Bearer <token>
@@ -480,33 +597,43 @@ Authorization: Bearer <token>
 }
 ```
 
-### 12. Adjust User Balance (Admin Only)
-```bash
-POST /api/v1/bounty/adjust
-Authorization: Bearer <admin_token>
-Content-Type: application/json
+---
 
-{
-  "userId": 1,
-  "amount": 1000,
-  "reason": "Performance bonus for excellent work"
-}
+## 🎫 License (`/license`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/validate` | Public | Validate license key |
+| GET | `/me` | Required + License | Get current team's license |
+
+**Validate Body:** `{ licenseKey }`
+
+---
+
+## 📋 Response Format
+
+**Success:** `{ success: true, data: {...} }`  
+**Error:** `{ success: false, message: "error description" }`
+
+## 🔑 Authorization Header
+```
+Authorization: Bearer <jwt_token>
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "balanceBefore": 1500.00,
-    "balanceAfter": 2500.00,
-    "adjustmentAmount": 1000.00,
-    "reason": "Performance bonus for excellent work"
-  }
-}
-```
+## ⚠️ Task Workflow
+- **Create Task** → Hashira/Admin sets bounty/penalty
+- **Assign** → Goon claims task
+- **Complete** → On time = bounty paid | Late = penalty applied (10% of bounty)
 
-### 13. Error Response Example
+## 💡 Key Features
+- **Auto Penalty:** Late task completion deducts 10% of bounty from user balance
+- **License Validation:** Most operations require valid team license
+- **Role-Based Access:** Goon < Hashira < Oyakatasama (Admin)
+
+---
+
+## ⚠️ Error Response Example
+
 ```bash
 POST /api/v1/tasks/999/assign
 Authorization: Bearer <token>
