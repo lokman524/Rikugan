@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
+
+const roles = [
+	{ key: "HASHIRA", label: "HASHIRA" },
+	{ key: "GOON", label: "GOON" },
+];
 
 // Mock data for demonstration
 const mockTeam = {
@@ -223,14 +229,13 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 									onChange={(e) => setAddMemberId(e.target.value)}
 									className="flex-1"
 								/>
-								<select
-									className="rounded border border-gray-300 dark:bg-gray-700 dark:text-white px-2 py-1"
-									value={addMemberRole}
-									onChange={(e) => setAddMemberRole(e.target.value)}
+								<Select
+									className="max-w-xs"
+									items={roles}
+									placeholder="Select an role"
 								>
-									<option value="GOON">Goon</option>
-									<option value="HASHIRA">Hashira</option>
-								</select>
+									{(role) => <SelectItem>{role.label}</SelectItem>}
+								</Select>
 								<Button color="primary" onClick={handleAddMember}>
 									Add
 								</Button>
