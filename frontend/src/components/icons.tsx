@@ -1,5 +1,7 @@
-// Task Management Icon
-export const TaskManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+// Notification Icon
+export const NotificationIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+	props
+) => (
 	<svg
 		viewBox="0 0 24 24"
 		fill="none"
@@ -12,14 +14,54 @@ export const TaskManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (prop
 		strokeLinejoin="round"
 		{...props}
 	>
-		<rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fillOpacity="0.08" />
+		<path
+			d="M18 16v-5a6 6 0 10-12 0v5l-1.5 2A1 1 0 005.5 20h13a1 1 0 00.8-1.6L18 16z"
+			fill="currentColor"
+			fillOpacity="0.08"
+		/>
+		<path
+			d="M18 16v-5a6 6 0 10-12 0v5l-1.5 2A1 1 0 005.5 20h13a1 1 0 00.8-1.6L18 16z"
+			stroke="currentColor"
+			strokeWidth={1.5}
+		/>
+		<circle cx="12" cy="6" r="1" fill="currentColor" />
+		<path d="M9 20a3 3 0 006 0" stroke="currentColor" strokeWidth={1.5} />
+	</svg>
+);
+// Task Management Icon
+export const TaskManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+	props
+) => (
+	<svg
+		viewBox="0 0 24 24"
+		fill="none"
+		xmlns="http://www.w3.org/2000/svg"
+		width="1em"
+		height="1em"
+		stroke="currentColor"
+		strokeWidth={1.5}
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		{...props}
+	>
+		<rect
+			x="4"
+			y="4"
+			width="16"
+			height="16"
+			rx="3"
+			fill="currentColor"
+			fillOpacity="0.08"
+		/>
 		<path d="M8 9h8M8 13h5" stroke="currentColor" strokeWidth={1.5} />
 		<circle cx="7" cy="9" r="1" fill="currentColor" />
 		<circle cx="7" cy="13" r="1" fill="currentColor" />
 	</svg>
 );
 // Team Management Icon
-export const TeamManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+export const TeamManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+	props
+) => (
 	<svg
 		viewBox="0 0 24 24"
 		fill="none"
@@ -38,7 +80,11 @@ export const TeamManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (prop
 		<circle cx="7" cy="10" r="2" stroke="currentColor" strokeWidth={1.5} />
 		<circle cx="17" cy="10" r="2" stroke="currentColor" strokeWidth={1.5} />
 		<circle cx="12" cy="17" r="2" stroke="currentColor" strokeWidth={1.5} />
-		<path d="M9.5 12.5L12 15M14.5 12.5L12 15" stroke="currentColor" strokeWidth={1.5} />
+		<path
+			d="M9.5 12.5L12 15M14.5 12.5L12 15"
+			stroke="currentColor"
+			strokeWidth={1.5}
+		/>
 	</svg>
 );
 // License Icon
