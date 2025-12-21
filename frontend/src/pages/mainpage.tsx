@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import Dashboard from "./dashboard";
-import Wallet from "./wallet";
-import MyTask from "./myTask";
+import Taskboard from "./taskboard";
 import { DashboardIcon, TaskIcon, WalletIcon } from "@/components/icons";
 
 const DashboardPage: React.FC = () => {
@@ -15,8 +14,7 @@ const DashboardPage: React.FC = () => {
 
 	const menuItems = [
 		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
-		{ id: "wallet", label: "Wallet", icon: WalletIcon },
-		{ id: "tasks", label: "My Tasks", icon: TaskIcon },
+		{ id: "taskboard", label: "Taskboard", icon: TaskIcon },
 	];
 
 	return (
@@ -30,8 +28,7 @@ const DashboardPage: React.FC = () => {
 
 			{/* Main Content */}
 			{currentItemId === "dashboard" && <Dashboard user={user} />}
-			{currentItemId === "wallet" && <Wallet user={user} />}
-			{currentItemId === "tasks" && <MyTask user={user} />}
+			{currentItemId === "taskboard" && <Taskboard user={user} />}
 		</div>
 	);
 };

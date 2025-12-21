@@ -16,7 +16,7 @@ const RegisterPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
