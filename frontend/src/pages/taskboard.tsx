@@ -23,7 +23,9 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	const [tagFilter, setTagFilter] = useState("ALL");
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const [showConfirmTake, setShowConfirmTake] = useState(false);
-	const [pendingTakeBounty, setPendingTakeBounty] = useState<Bounty | null>(null);
+	const [pendingTakeBounty, setPendingTakeBounty] = useState<Bounty | null>(
+		null
+	);
 
 	// Mock bounties data - replace with actual API call
 	useEffect(() => {
@@ -143,9 +145,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		}
 
 		if (tagFilter !== "ALL") {
-			filtered = filtered.filter((bounty) =>
-				bounty.tags.includes(tagFilter)
-			);
+			filtered = filtered.filter((bounty) => bounty.tags.includes(tagFilter));
 		}
 
 		setFilteredBounties(filtered);
@@ -164,8 +164,10 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 			const dateA = new Date(a.deadline).getTime();
 			const dateB = new Date(b.deadline).getTime();
 			if (dateA !== dateB) return dateA - dateB;
-			return (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3) -
-				(priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3);
+			return (
+				(priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3) -
+				(priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3)
+			);
 		});
 
 	const handleBountyClick = (bounty: Bounty) => {
@@ -207,7 +209,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
 			{/* Main Content */}
 			<div className="flex-1 lg:ml-0 transition-all duration-300 mr-80">
 				{/* Header */}
@@ -300,9 +302,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 			</div>
 
 			{/* My Tasks Fixed Sidebar */}
-			<div
-				className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 border-l border-gray-200 dark:border-gray-700 flex flex-col"
-			>
+			<div className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 border-l border-gray-200 dark:border-gray-700 flex flex-col">
 				<div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
 					<h2 className="text-lg font-semibold text-gray-900 dark:text-white">
 						My Active Tasks
@@ -320,15 +320,17 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 									className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
 									onClick={() => handleBountyClick(bounty)}
 								>
-									<div className="font-semibold text-gray-900 dark:text-white truncate">{bounty.title}</div>
+									<div className="font-semibold text-gray-900 dark:text-white truncate">
+										{bounty.title}
+									</div>
 									<div className="flex items-center text-xs mt-1 gap-2">
 										<span
 											className={`px-2 py-0.5 rounded ${
 												bounty.priority === "HIGH"
 													? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
 													: bounty.priority === "MEDIUM"
-													? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-													: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+														? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+														: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
 											}`}
 										>
 											{bounty.priority}

@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import Dashboard from "./dashboard";
 import Taskboard from "./taskboard";
-import { DashboardIcon, TaskIcon, WalletIcon } from "@/components/icons";
+import { DashboardIcon, TaskIcon, LicenseIcon } from "@/components/icons";
+import License from "./liscense";
 
 const DashboardPage: React.FC = () => {
 	const { user } = useAuth();
@@ -15,11 +16,13 @@ const DashboardPage: React.FC = () => {
 	const menuItems = [
 		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
 		{ id: "taskboard", label: "Taskboard", icon: TaskIcon },
+		{ id: "license", label: "License", icon: LicenseIcon },
 	];
 
 	const componentMap: Record<string, React.ReactNode> = {
 		dashboard: <Dashboard user={user} />,
 		taskboard: <Taskboard user={user} />,
+		license: <License user={user} />,
 	};
 
 	return (
