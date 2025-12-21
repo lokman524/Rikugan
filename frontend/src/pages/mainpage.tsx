@@ -19,6 +19,12 @@ const DashboardPage: React.FC = () => {
 		{ id: "tasks", label: "My Tasks", icon: TaskIcon },
 	];
 
+	const componentMap: Record<string, React.ReactNode> = {
+		dashboard: <Dashboard user={user} />,
+		wallet: <Wallet user={user} />,
+		tasks: <MyTask user={user} />,
+	};
+
 	return (
 		<div className="h-screen bg-gray-50 dark:bg-gray-900 flex">
 			<Sidebar
@@ -29,9 +35,7 @@ const DashboardPage: React.FC = () => {
 			/>
 
 			{/* Main Content */}
-			{currentItemId === "dashboard" && <Dashboard user={user} />}
-			{currentItemId === "wallet" && <Wallet user={user} />}
-			{currentItemId === "tasks" && <MyTask user={user} />}
+			{componentMap[currentItemId]}
 		</div>
 	);
 };
