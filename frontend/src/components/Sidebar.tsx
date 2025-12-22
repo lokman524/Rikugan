@@ -38,9 +38,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 
 	const handleLogout = () => {
-		logout();
 		onClose();
-		navigate('/login', { replace: true });
+		logout();
 	};
 
 	return (

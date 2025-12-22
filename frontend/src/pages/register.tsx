@@ -24,28 +24,50 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError('');
     
+    // Client-side validation
+    if (username.length < 3 || username.length > 50) {
+      setError('Username must be between 3 and 50 characters.');
+      return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address (e.g., user@example.com).');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
     
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
     
-    const success = await register(username, email, password, role);
-    if (success) {
+    try {
+      await register(username, email, password, role);
       navigate('/dashboard');
-    } else {
-      setError('Registration failed. Please try again.');
+    } catch (err: any) {
+      // Extract error message from API response
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        // Handle validation errors with specific fields
+        const errors = err.response.data.errors;
+        const errorMessages = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+        setError(errorMessages);
+      } else {
+        const errorMsg = err.response?.data?.message || 'Registration failed. Please try again.';
+        setError(errorMsg);
+      }
     }
   };
 
   const roles = [
-    { key: 'GOON', label: 'Goon (Junior Programmer)' },
-    { key: 'HASHIRA', label: 'Hashira (Senior Programmer)' },
-    { key: 'OYAKATASAMA', label: 'Oyakatasama (Administrator)' }
+    { key: 'GOON', label: 'Goon - Junior Developer' },
+    { key: 'HASHIRA', label: 'Hashira - Senior Developer' },
+    { key: 'OYAKATASAMA', label: 'Oyakatasama - Administrator' }
   ];
 
   return (
@@ -54,7 +76,7 @@ const RegisterPage: React.FC = () => {
       <Card className="relative z-10 w-full max-w-md mx-4">
         <CardHeader className="flex flex-col gap-3 pb-6">
           <h1 className="text-2xl font-bold text-center">Join the Corps</h1>
-          <p className="text-center text-gray-600">Create your account</p>
+          <p className="text-center text-gray-600">Create your account to get started</p>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,11 +122,12 @@ const RegisterPage: React.FC = () => {
             
             <Input
               label="Password"
-              placeholder="Create a password"
+              placeholder="Create a password (min 8 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               variant="bordered"
+              description="Must be at least 8 characters"
               endContent={
                 <button
                   className="focus:outline-none"

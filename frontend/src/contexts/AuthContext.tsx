@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string, role: string) => Promise<boolean>;
   logout: () => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   register: async () => false,
   logout: () => {},
+  changePassword: async () => ({ success: false }),
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -75,24 +77,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (username: string, email: string, password: string, role: string) => {
     setIsLoading(true);
     try {
-      // For demo, use default teamName and licenseKey
-      const teamName = 'Demon Slayer Corps';
-      const licenseKey = 'DSCPMS-2024-UNLIMITED-ACCESS';
       const res = await axios.post('http://localhost:3000/api/v1/auth/register', {
         username,
         email,
         password,
-        role,
-        teamName,
-        licenseKey,
+        role
       });
       const { token, user } = res.data.data;
       setAuth(token, user);
       setIsLoading(false);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
-      return false;
+      throw err; // Re-throw to let register page handle specific errors
+    }
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    try {
+      await axios.post('http://localhost:3000/api/v1/auth/change-password', {
+        oldPassword,
+        newPassword
+      });
+      return { success: true, message: 'Password changed successfully' };
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Failed to change password';
+      return { success: false, message };
     }
   };
 
@@ -101,19 +111,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Navigate after clearing state
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 0);
   };
 
-  // Optionally, set axios default header for token
+  // Set axios default header for token and add interceptor for auth errors
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
       delete axios.defaults.headers.common['Authorization'];
     }
+
+    // Add response interceptor to handle auth errors globally
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          // Handle 401 Unauthorized - token expired or invalid
+          if (error.response.status === 401) {
+            // Don't redirect if we're on login/register pages (let them handle errors)
+            const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+            if (!isAuthPage) {
+              // Clear auth state without calling logout() to prevent infinite loop
+              setUser(null);
+              setToken(null);
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              delete axios.defaults.headers.common['Authorization'];
+              window.location.href = '/login';
+            }
+          }
+          // Handle 403 Forbidden - typically license issues
+          else if (error.response.status === 403) {
+            const message = error.response.data?.message || 'Access denied';
+            // Check if it's a license-related error
+            if (message.includes('license') || message.includes('team')) {
+              console.error('License Error:', message);
+              // You can show a toast/notification here if needed
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, [token]);
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
