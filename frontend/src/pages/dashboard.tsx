@@ -265,7 +265,13 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 												</td>
 												<td className="py-2 px-2 text-gray-900 dark:text-white">${task.bountyAmount}</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
-													{new Date(task.deadline).toLocaleDateString()}
+													{new Date(task.deadline).toLocaleString('en-US', { 
+														month: 'short', 
+														day: 'numeric', 
+														year: 'numeric',
+														hour: 'numeric',
+														minute: '2-digit'
+													})}
 												</td>
 											</tr>
 										))}
@@ -312,7 +318,13 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 												</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">{txn.description}</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
-													{new Date(txn.created_at).toLocaleDateString()}
+													{new Date(txn.created_at).toLocaleString('en-US', { 
+														month: 'short', 
+														day: 'numeric', 
+														year: 'numeric',
+														hour: 'numeric',
+														minute: '2-digit'
+													})}
 												</td>
 											</tr>
 										))}

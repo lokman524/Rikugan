@@ -15,7 +15,6 @@ export interface Bounty {
   assignedTo?: string;
   assignedAt?: string;
   tags: string[];
-  estimatedHours?: number;
 }
 
 interface BountyCardProps {
