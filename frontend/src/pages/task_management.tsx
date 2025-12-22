@@ -748,16 +748,16 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 													<Button
 														size="sm"
 														variant="bordered"
-														onPress={() => handleManageTaskStatus(manageTaskSelected, "REVIEW")}
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "AVAILABLE")}
 													>
-														Set Review
+														Set Available
 													</Button>
 													<Button
 														size="sm"
 														variant="bordered"
-														onPress={() => handleManageTaskStatus(manageTaskSelected, "AVAILABLE")}
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "REVIEW")}
 													>
-														Set Available
+														Set Review
 													</Button>
 												</>
 											) : (
