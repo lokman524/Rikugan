@@ -21,11 +21,71 @@ This manual provides instructions for end users of the Rikugan frontend web appl
 \subsection{Accessing the Website}
 Open your web browser and navigate to the deployed URL or run the application locally using the provided instructions in the README.
 
-\subsection{Login and Registration}
+\subsection{User Roles and Account Creation}
+The system supports three user roles with different permissions:
 \begin{itemize}
-  \item \textbf{Register:} Click on the Register link and fill in your details to create a new account.
-  \item \textbf{Login:} Enter your credentials on the login page to access your dashboard.
+  \item \textbf{Oyakatasama (Admin):} Full system access, creates teams and manages all users
+  \item \textbf{Hashira (Senior):} Can create tasks and manage team members
+  \item \textbf{Goon (Junior):} Can work on tasks and earn bounties
 \end{itemize}
+
+\subsection{First-Time Setup (For Oyakatasama/Admin)}
+If you are the team administrator:
+\begin{enumerate}
+  \item On the welcome page, click \textbf{"Join the Corps"} to create a new admin account
+  \item Fill in your registration details:
+  \begin{itemize}
+    \item Username
+    \item Email address
+    \item Password
+    \item Select role: \textbf{Oyakatasama}
+  \end{itemize}
+  \item After registration, you will be directed to the \textbf{Team Creation} page
+  \item Enter your team information:
+  \begin{itemize}
+    \item Team Name
+    \item Team Description
+    \item \textbf{License Key} - Use one of the default licenses from the system configuration:
+    \begin{itemize}
+      \item \texttt{RIKUGAN-2024-TEAM-A} (50 users, expires 2025-12-31)
+      \item \texttt{RIKUGAN-2024-TEAM-B} (100 users, expires 2025-12-31)
+      \item \texttt{RIKUGAN-2024-TEAM-C} (25 users, expires 2026-06-30)
+      \item \texttt{DSCPMS-2024-UNLIMITED-ACCESS} (demo/development)
+    \end{itemize}
+  \end{itemize}
+  \item Click \textbf{Create Team} to complete setup
+  \item You can now add team members (Hashira and Goons) from the Team Management page
+\end{enumerate}
+
+\subsection{Adding Team Members (For Oyakatasama)}
+After creating your team:
+\begin{enumerate}
+  \item Navigate to \textbf{Team Management} from the sidebar
+  \item Click \textbf{Add Member} or \textbf{Create User Account}
+  \item Fill in the new member's details:
+  \begin{itemize}
+    \item Username
+    \item Email address
+    \item Temporary password (share this with the user securely)
+    \item Select role: Hashira or Goon
+  \end{itemize}
+  \item Click \textbf{Create Account}
+  \item Share the login credentials with the new user
+\end{enumerate}
+
+\subsection{Login (For Hashira and Goons)}
+If an admin has created an account for you:
+\begin{enumerate}
+  \item On the welcome page, click \textbf{"Login"}
+  \item Enter the credentials provided by your admin:
+  \begin{itemize}
+    \item Email or Username
+    \item Password
+  \end{itemize}
+  \item Click \textbf{Login}
+  \item You will be directed to the dashboard
+  \item \textbf{Important:} Change your password immediately after first login for security
+\end{enumerate}
 
 \section{Main Features}
 
@@ -50,30 +110,117 @@ The sidebar provides quick access to all main sections:
 \subsection{Team Management}
 \begin{itemize}
   \item View your current team, its members, and license status.
-  \item Create a new team if you are not part of one.
-  \item Add or remove team members (if you have permission).
-  \item Edit team information and deactivate the team if needed.
+  \item \textbf{For Oyakatasama:} Create accounts for new team members (Hashira or Goons):
+  \begin{itemize}
+    \item Click \textbf{Add Member}
+    \item Enter username, email, password, and select role
+    \item New user can login immediately with the provided credentials
+  \end{itemize}
+  \item View team member details including roles and permissions.
+  \item Remove team members if needed (admin permission required).
+  \item Edit team information such as name and description.
+  \item Monitor team license status and expiration date.
+  \item Deactivate the team if necessary (admin only).
 \end{itemize}
 
 \subsection{Task Management}
+\subsubsection{Creating Tasks (For Hashira and Oyakatasama)}
 \begin{itemize}
-  \item View all tasks assigned to your team.
-  \item Create, assign, and update tasks (if you have permission).
-  \item Track task progress and completion.
+  \item Navigate to \textbf{Task Management} from the sidebar
+  \item Click \textbf{Create Task}
+  \item Fill in task details:
+  \begin{itemize}
+    \item Task title
+    \item Description
+    \item Priority (Low, Medium, High)
+    \item Deadline
+    \item Bounty amount (reward for completion)
+  \end{itemize}
+  \item Click \textbf{Create} to publish the task
+  \item Task will appear in the taskboard as \textbf{Available}
 \end{itemize}
+
+\subsubsection{Accepting Tasks (For All Users)}
+\begin{itemize}
+  \item Navigate to \textbf{Taskboard} from the sidebar
+  \item Browse available tasks in the board
+  \item Click on a task card to view details
+  \item Click \textbf{Accept Task} or \textbf{Assign to Self}
+  \item Task status changes to \textbf{In Progress}
+  \item Task moves to your \textbf{Taken Task} tab
+\end{itemize}
+
+\subsubsection{Completing Tasks (For Task Assignee)}
+\begin{itemize}
+  \item Navigate to \textbf{Taskboard} from the sidebar
+  \item Go to the \textbf{Taken Task} tab
+  \item Find your in-progress task
+  \item Complete the work as described in the task
+  \item Click \textbf{Complete Task} or \textbf{Submit for Review}
+  \item Task status changes to \textbf{Under Review}
+  \item Wait for the task creator to review your work
+\end{itemize}
+
+\subsubsection{Reviewing Tasks (For Task Creator)}
+\begin{itemize}
+  \item Navigate to \textbf{Task Management} or \textbf{Taskboard}
+  \item View tasks with status \textbf{Under Review}
+  \item Review the completed work
+  \item Click \textbf{Mark as Completed} to approve the task
+  \item The task assignee will receive:
+  \begin{itemize}
+    \item A notification of task completion
+    \item Bounty payment added to their balance
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Viewing Updated Balance}
+\begin{itemize}
+  \item After a task is approved, your balance will be updated with the bounty amount
+  \item Check the notification panel for confirmation
+  \item View your updated balance in the dashboard or profile
+  \item \textbf{Note:} If your balance is not immediately updated, refresh the page to see the changes
+\end{itemize}
+
+\subsubsection{Task Workflow Summary}
+\begin{enumerate}
+  \item Hashira/Oyakatasama creates task → Task appears as \textbf{Available}
+  \item Any user accepts task → Task becomes \textbf{In Progress}
+  \item User completes work and submits → Task goes to \textbf{Under Review}
+  \item Task creator reviews and approves → Task marked as \textbf{Completed}
+  \item User receives notification and bounty payment → Balance updated
+\end{enumerate}
 
 \subsection{Notifications}
 \begin{itemize}
   \item View all notifications related to your account and team.
+  \item Common notification types:
+  \begin{itemize}
+    \item Task assigned to you
+    \item Task submitted for review (for task creators)
+    \item Task completed and approved
+    \item Bounty payment received
+    \item Deadline reminders
+    \item Team updates
+  \end{itemize}
   \item Filter notifications by unread status.
   \item Mark notifications as read or delete them.
   \item Use the search bar to find specific notifications.
+  \item Click on a notification to view details or navigate to the related task.
 \end{itemize}
 
 \subsection{User Profile}
 \begin{itemize}
   \item Click your avatar or username in the sidebar to view and edit your profile.
-  \item Update your email, password, and other personal information.
+  \item Update your email and other personal information.
+  \item \textbf{Change Password:} For security, change your password after first login:
+  \begin{itemize}
+    \item Navigate to Profile Settings
+    \item Click \textbf{Change Password}
+    \item Enter your old password and new password
+    \item Confirm the new password
+  \end{itemize}
+  \item View your account statistics including tasks completed and bounties earned.
 \end{itemize}
 
 \subsection{Theme Toggle}
@@ -85,8 +232,24 @@ Click the Logout button in the sidebar to securely sign out of your account.
 \section{Tips and Troubleshooting}
 \begin{itemize}
   \item For best experience, use a modern web browser (Chrome, Firefox, Edge).
+  \item \textbf{First Login:} Always change your password after receiving credentials from an admin.
+  \item \textbf{License Issues:} If you cannot access features, verify that your team has a valid license.
+  \item \textbf{Forgot Password:} Contact your team administrator (Oyakatasama) to reset your password.
+  \item \textbf{Cannot Create Team:} Ensure you have a valid license key from the system administrator.
+  \item \textbf{Balance Not Updated:} After completing a task, refresh the page if your balance doesn't update immediately.
+  \item \textbf{Task Not Appearing:} Check the correct tab (Available, Taken Task, or Completed) in the taskboard.
+  \item \textbf{Cannot Accept Task:} Ensure you have sufficient permissions and your team has a valid license.
   \item If you encounter issues, try refreshing the page or clearing your browser cache.
   \item For further help, contact your system administrator or support team.
+\end{itemize}
+
+\section{Security Best Practices}
+\begin{itemize}
+  \item Change the default password provided by your admin immediately after first login.
+  \item Use a strong password with at least 8 characters, including uppercase, lowercase, numbers, and special characters.
+  \item Do not share your login credentials with others.
+  \item Always logout when finished using the application.
+  \item Report any suspicious activity to your team administrator.
 \end{itemize}
 
 \section{Contact and Support}
