@@ -460,37 +460,33 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 											))}
 										</div>
 									</div>
-									{/* Update Status Button for My Task */}
-									{selectedBounty.assignedTo === user?.username &&
-										!["REVIEW", "COMPLETED", "CANCELLED"].includes(selectedBounty.status) && (
-											<div className="mt-4">
-												<h4 className="font-semibold mb-2">Update Status</h4>
-												<div className="flex gap-2">
-													<Button
-														size="sm"
-														variant={selectedBounty.status === "IN_PROGRESS" ? "solid" : "bordered"}
-														onPress={() => handleUpdateStatus(selectedBounty, "IN_PROGRESS")}
-														disabled={selectedBounty.status === "IN_PROGRESS"}
-													>
-														In Progress
-													</Button>
-													<Button
-														size="sm"
-														variant={selectedBounty.status === "REVIEW" ? "solid" : "bordered"}
-														onPress={() => handleUpdateStatus(selectedBounty, "REVIEW")}
-														disabled={selectedBounty.status === "REVIEW"}
-													>
-														In Review
-													</Button>
-												</div>
-											</div>
-										)}
 								</div>
 							</ModalBody>
 							<ModalFooter>
+							{/* Submit and Cancel buttons for tasks assigned to user */}
+							{selectedBounty.assignedTo === user?.username &&
+								!["", "COMPLETED", "CANCELLED"].includes(selectedBounty.status) && (
+									<>
+										<Button
+											color="success"
+											onPress={() => handleUpdateStatus(selectedBounty, "REVIEW")}
+											disabled={selectedBounty.status === "REVIEW"}
+										>
+											Submit for Review
+										</Button>
+										<Button variant="light" onPress={onClose}>
+											Cancel
+										</Button>
+									</>
+								)}
+							{/* Close button for all other cases */}
+							{(selectedBounty.assignedTo !== user?.username ||
+								["", "COMPLETED", "CANCELLED"].includes(selectedBounty.status)) && (
 								<Button variant="light" onPress={onClose}>
 									Close
 								</Button>
+							)}
+							{/* Take Task button for available tasks */}
 								{selectedBounty.status === "AVAILABLE" &&
 									selectedBounty.assignedTo !== user?.username && (
 										<Button

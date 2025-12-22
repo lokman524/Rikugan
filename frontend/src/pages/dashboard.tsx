@@ -6,12 +6,10 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 	// Dashboard data states
 	const [taskHistory, setTaskHistory] = useState<any[]>([]);
 	const [transactions, setTransactions] = useState<any[]>([]);
-	const [taskStats, setTaskStats] = useState<any>(null);
 	const [availableTasksCount, setAvailableTasksCount] = useState(0);
 	const [activeTasksCount, setActiveTasksCount] = useState(0);
 	const [completionRate, setCompletionRate] = useState(0);
 	const [loading, setLoading] = useState(true);
-	const [teamId, setTeamId] = useState<number | null>(null);
 
 	// Fetch dashboard data
 	useEffect(() => {
@@ -44,19 +42,6 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 				// Fetch transactions
 				const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounties/transactions/${user.id}`, config);
 				setTransactions(transactionsResponse.data.data || []);
-
-				// Fetch team statistics (for OYAKATASAMA)
-				if (user.role === 'OYAKATASAMA') {
-					// First get user's team
-					const teamResponse = await axios.get('http://localhost:3000/api/v1/teams/my-team', config);
-					if (teamResponse.data.success && teamResponse.data.data) {
-						const myTeamId = teamResponse.data.data.id;
-						setTeamId(myTeamId);
-						// Fetch team statistics
-						const statsResponse = await axios.get(`http://localhost:3000/api/v1/teams/${myTeamId}/statistics`, config);
-						setTaskStats(statsResponse.data.data);
-					}
-				}
 
 				setLoading(false);
 			} catch (error) {
@@ -100,19 +85,6 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 						// Fetch transactions
 						const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounties/transactions/${user.id}`, config);
 						setTransactions(transactionsResponse.data.data || []);
-
-						// Fetch team statistics (for OYAKATASAMA)
-						if (user.role === 'OYAKATASAMA') {
-							// First get user's team
-							const teamResponse = await axios.get('http://localhost:3000/api/v1/teams/my-team', config);
-							if (teamResponse.data.success && teamResponse.data.data) {
-								const myTeamId = teamResponse.data.data.id;
-								setTeamId(myTeamId);
-								// Fetch team statistics
-								const statsResponse = await axios.get(`http://localhost:3000/api/v1/teams/${myTeamId}/statistics`, config);
-								setTaskStats(statsResponse.data.data);
-							}
-						}
 					} catch (error) {
 						console.error('Error fetching dashboard data:', error);
 					}
@@ -351,63 +323,6 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 							<p className="text-gray-600 dark:text-gray-400">No transactions available.</p>
 						)}
 					</div>
-
-					{/* Team Performance Widget - OYAKATASAMA Only */}
-					{user.role === 'OYAKATASAMA' && (
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-							<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-								Team Performance
-							</h2>
-							{loading ? (
-								<p className="text-gray-600 dark:text-gray-400">Loading...</p>
-							) : taskStats ? (
-								<div className="space-y-6">
-									{/* Team Overview Stats */}
-									<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-										<div className="text-center bg-gray-50 dark:bg-gray-700 p-4 rounded">
-											<p className="text-2xl font-bold text-gray-900 dark:text-white">
-												{taskStats.memberCount || 0}
-											</p>
-											<p className="text-xs text-gray-600 dark:text-gray-400">Team Members</p>
-										</div>
-										<div className="text-center bg-blue-50 dark:bg-blue-900/30 p-4 rounded">
-											<p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-												{taskStats.totalTasks || 0}
-											</p>
-											<p className="text-xs text-gray-600 dark:text-gray-400">Total Tasks</p>
-										</div>
-										<div className="text-center bg-green-50 dark:bg-green-900/30 p-4 rounded">
-											<p className="text-2xl font-bold text-green-600 dark:text-green-400">
-												{taskStats.completedTasks || 0}
-											</p>
-											<p className="text-xs text-gray-600 dark:text-gray-400">Completed</p>
-										</div>
-										<div className="text-center bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded">
-											<p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
-												{taskStats.inProgressTasks || 0}
-											</p>
-											<p className="text-xs text-gray-600 dark:text-gray-400">In Progress</p>
-										</div>
-									</div>
-
-									{/* Team Earnings */}
-									<div className="border-t dark:border-gray-700 pt-4">
-										<h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-											Team Earnings
-										</h3>
-										<div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 p-6 rounded-lg">
-											<p className="text-3xl font-bold text-amber-700 dark:text-amber-300">
-												¥{(taskStats.totalEarnings || 0).toLocaleString()}
-											</p>
-											<p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Team Bounties Earned</p>
-										</div>
-									</div>
-								</div>
-							) : (
-								<p className="text-gray-600 dark:text-gray-400">No team statistics available.</p>
-							)}
-						</div>
-					)}
 				</div>
 			</div>
 		</div>
