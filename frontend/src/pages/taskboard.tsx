@@ -36,7 +36,6 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		deadline: "",
 		priority: "MEDIUM",
 		tags: "",
-		estimatedHours: "",
 	});
 	const [bountyMin, setBountyMin] = useState(""); // for bounty amount filter
 	const [showConfirmReview, setShowConfirmReview] = useState(false);
@@ -60,7 +59,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 					priority: task.priority,
 					createdBy: task.creator?.username || 'Unknown',
 					assignedTo: task.assignee?.username,				assignedAt: task.assignedAt,					tags: Array.isArray(task.tags) ? task.tags : [],
-					estimatedHours: 0
+
 				}));
 				setBounties(apiTasks);
 			} catch (error) {
@@ -251,6 +250,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 				setSelectedBounty((b) =>
 					b && b.id === pendingReviewTask.id ? { ...b, status: "REVIEW" } : b
 				);
+				onClose(); // Close the detail modal after successful submission
 			} catch (error) {
 				console.error('Failed to update status:', error);
 				alert('Failed to update task status. Please try again.');
@@ -442,7 +442,13 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 										<div>
 											<h4 className="font-semibold">Deadline</h4>
 											<p>
-												{new Date(selectedBounty.deadline).toLocaleDateString()}
+												{new Date(selectedBounty.deadline).toLocaleString('en-US', { 
+													month: 'short', 
+													day: 'numeric', 
+													year: 'numeric',
+													hour: 'numeric',
+													minute: '2-digit'
+												})}
 											</p>
 										</div>
 									</div>

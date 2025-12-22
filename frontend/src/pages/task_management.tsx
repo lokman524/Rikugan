@@ -30,7 +30,6 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		deadline: "",
 		priority: "MEDIUM",
 		tags: "",
-		estimatedHours: "",
 	});
 	const [selectedTags, setSelectedTags] = useState<string[]>([]);
 	const [newTagInput, setNewTagInput] = useState("");
@@ -68,7 +67,6 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 					assignedTo: task.assignee?.username,
 					assignedAt: task.assignedAt,
 					tags: Array.isArray(task.tags) ? task.tags : [],
-					estimatedHours: 0
 				}));
 				setBounties(apiTasks);
 			} catch (error) {
@@ -223,7 +221,6 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				createdBy: task.creator?.username || 'Unknown',
 				assignedTo: task.assignee?.username,
 				tags: Array.isArray(task.tags) ? task.tags : [],
-				estimatedHours: 0
 			}));
 			setBounties(apiTasks);
 			
@@ -235,7 +232,6 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				deadline: "",
 				priority: "MEDIUM",
 				tags: "",
-				estimatedHours: "",
 			});
 			setSelectedTags([]);
 			setNewTagInput("");
@@ -608,14 +604,20 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 								onChange={handleCreateTaskInput}
 								required
 							/>
-							<Input
-								label="Deadline"
-								name="deadline"
-								type="date"
-								value={createTaskForm.deadline}
-								onChange={handleCreateTaskInput}
-								required
-							/>
+							<div>
+								<label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300" htmlFor="deadline-input">
+									Deadline
+								</label>
+								<input
+									id="deadline-input"
+									name="deadline"
+									type="datetime-local"
+									value={createTaskForm.deadline}
+									onChange={handleCreateTaskInput}
+									required
+									className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+								/>
+							</div>
 							<Select
 								label="Priority"
 								name="priority"
@@ -659,13 +661,6 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 									placeholder="e.g. Backend, Urgent"
 								/>
 							</div>
-							<Input
-								label="Estimated Hours"
-								name="estimatedHours"
-								type="number"
-								value={createTaskForm.estimatedHours}
-								onChange={handleCreateTaskInput}
-							/>
 							<Button color="primary" className="w-full" onPress={handleSubmitCreateTask}>
 								Create
 							</Button>
@@ -703,7 +698,13 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 										<div>
 											<h4 className="font-semibold">Deadline</h4>
 											<p>
-												{new Date(manageTaskSelected.deadline).toLocaleDateString()}
+												{new Date(manageTaskSelected.deadline).toLocaleString('en-US', { 
+													month: 'short', 
+													day: 'numeric', 
+													year: 'numeric',
+													hour: 'numeric',
+													minute: '2-digit'
+												})}
 											</p>
 										</div>
 									</div>								{manageTaskSelected.assignedTo && (
@@ -718,7 +719,13 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 											<h4 className="font-semibold">Assigned Date</h4>
 											<p className="text-gray-700 dark:text-gray-300">
 												{manageTaskSelected.assignedAt
-													? new Date(manageTaskSelected.assignedAt).toLocaleDateString()
+													? new Date(manageTaskSelected.assignedAt).toLocaleString('en-US', { 
+														month: 'short', 
+														day: 'numeric', 
+														year: 'numeric',
+														hour: 'numeric',
+														minute: '2-digit'
+													})
 													: 'N/A'}
 											</p>
 										</div>
