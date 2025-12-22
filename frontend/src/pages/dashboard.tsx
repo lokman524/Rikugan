@@ -325,7 +325,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 												</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">{txn.description}</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
-													{new Date(txn.createdAt).toLocaleDateString()}
+													{new Date(txn.created_at).toLocaleDateString()}
 												</td>
 											</tr>
 										))}
