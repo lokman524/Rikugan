@@ -15,7 +15,7 @@ import {
 } from "@/components/icons";
 
 const DashboardPage: React.FC = () => {
-	const { user } = useAuth();
+	const { user, refreshUser } = useAuth();
 
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -25,6 +25,11 @@ const DashboardPage: React.FC = () => {
 		return "dashboard";
 	});
 	const [dashboardKey, setDashboardKey] = useState(0);
+
+	// Refresh user data on component mount
+	useEffect(() => {
+		refreshUser();
+	}, []);
 
 	// Force dashboard to remount when switching back to it
 	useEffect(() => {

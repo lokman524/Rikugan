@@ -32,6 +32,7 @@ interface AuthContextType {
 		oldPassword: string,
 		newPassword: string
 	) => Promise<{ success: boolean; message?: string }>;
+	refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -42,6 +43,7 @@ const AuthContext = createContext<AuthContextType>({
 	register: async () => false,
 	logout: () => {},
 	changePassword: async () => ({ success: false }),
+	refreshUser: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -132,6 +134,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	};
 
+	const refreshUser = async () => {
+		if (!token) return;
+		
+		try {
+			const res = await axios.get("http://localhost:3000/api/v1/auth/me");
+			const updatedUser = res.data.data;
+			setUser(updatedUser);
+			localStorage.setItem("user", JSON.stringify(updatedUser));
+		} catch (err) {
+			console.error("Failed to refresh user data:", err);
+		}
+	};
+
 	const logout = () => {
 		setUser(null);
 		setToken(null);
@@ -153,8 +168,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 		// Add response interceptor to handle auth errors globally
 		const interceptor = axios.interceptors.response.use(
-			(response) => response,
-			(error) => {
+			(response: any) => response,
+			(error: any) => {
 				if (error.response) {
 					// Handle 401 Unauthorized - token expired or invalid
 					if (error.response.status === 401) {
@@ -202,6 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 				register,
 				logout,
 				changePassword,
+				refreshUser,
 			}}
 		>
 			{children}
