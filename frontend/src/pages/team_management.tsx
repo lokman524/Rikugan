@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
+const baseApiUrl = "http://localhost:3000/api/v1";
 
 const roles = [
 	{ key: "HASHIRA", label: "HASHIRA" },
@@ -30,18 +31,72 @@ const mockTeam = {
 };
 
 const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
-	const [team, setTeam] = useState<any | null>(mockTeam); // Replace with API call
+	const [team, setTeam] = useState<any | null>(null); // Will fetch from API
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
+	const [success, setSuccess] = useState("");
+
+	// Fetch team info
+	const fetchTeam = async () => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/teams/my-team`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			const data = await res.json();
+			if (res.ok && data.success) {
+				setTeam(data.data);
+			} else {
+				setTeam(null);
+			}
+		} catch {
+			setTeam(null);
+		}
+		setLoading(false);
+	};
+
+	// Fetch team statistics
+	const fetchTeamStatistics = async (teamId: number) => {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/teams/${teamId}/statistics`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			const data = await res.json();
+			if (res.ok && data.success) {
+				setTeam((prev: any) =>
+					prev ? { ...prev, statistics: data.data } : prev
+				);
+			}
+		} catch {}
+	};
+
+	useEffect(() => {
+		fetchTeam();
+	}, []);
+
+	useEffect(() => {
+		if (team?.id) {
+			fetchTeamStatistics(team.id);
+		}
+	}, [team?.id]);
 	const [showCreate, setShowCreate] = useState(false);
 	const [createForm, setCreateForm] = useState({
 		teamName: "",
 		description: "",
 		licenseKey: "",
 	});
-	const [addMemberId, setAddMemberId] = useState("");
-	const [addMemberRole, setAddMemberRole] = useState("GOON");
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState("");
-	const [success, setSuccess] = useState("");
+	const [addMemberForm, setAddMemberForm] = useState({
+		username: "",
+		email: "",
+		password: "",
+		role: "GOON",
+	});
 
 	// Handlers for create team
 	const handleCreateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,59 +104,157 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 	};
 	const handleCreateTeam = () => {
 		setLoading(true);
-		setTimeout(() => {
-			setTeam({
-				...mockTeam,
-				name: createForm.teamName,
+		setError("");
+		setSuccess("");
+		const token = localStorage.getItem("token");
+		fetch(`${baseApiUrl}/teams/create`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				teamName: createForm.teamName,
 				description: createForm.description,
-				license: {
-					licenseKey: createForm.licenseKey,
-					expirationDate: "2026-01-01",
-				},
-			});
-			setShowCreate(false);
-			setLoading(false);
-			setSuccess("Team created successfully!");
-		}, 1000);
+				licenseKey: createForm.licenseKey,
+			}),
+		})
+			.then(async (res) => {
+				const data = await res.json();
+				if (!res.ok || !data.success)
+					throw new Error(data.message || "Failed to create team");
+				fetchTeam(); // Refresh team info
+				setShowCreate(false);
+				setSuccess("Team created successfully!");
+			})
+			.catch((err) => {
+				setError(err.message || "Failed to create team");
+			})
+			.finally(() => setLoading(false));
 	};
 
-	// Handlers for add/remove member (mock)
-	const handleAddMember = () => {
-		if (!addMemberId) return;
-		setTeam((prev: any) => ({
-			...prev,
-			members: [
-				...prev.members,
-				{ id: Date.now(), username: addMemberId, role: addMemberRole },
-			],
-			statistics: {
-				...prev.statistics,
-				memberCount: prev.statistics.memberCount + 1,
-			},
-		}));
-		setAddMemberId("");
-		setAddMemberRole("GOON");
+	// Handler for add member (API call)
+	const handleAddMember = async () => {
+		const { username, email, password, role } = addMemberForm;
+		if (!username || !email || !password || !role) {
+			setError("All fields are required");
+			return;
+		}
+		setLoading(true);
+		setError("");
+		setSuccess("");
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/teams/${team.id}/members`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({ username, email, password, role }),
+			});
+			const data = await res.json();
+			if (!res.ok || !data.success)
+				throw new Error(data.message || "Failed to add member");
+			// Add new member to local state
+			setTeam((prev: any) => ({
+				...prev,
+				members: [...prev.members, data.data.user],
+			}));
+			// Refetch statistics after adding member
+			fetchTeamStatistics(team.id);
+			setSuccess("Member added successfully!");
+			setAddMemberForm({ username: "", email: "", password: "", role: "GOON" });
+		} catch (err: any) {
+			setError(err.message || "Failed to add member");
+		}
+		setLoading(false);
 	};
 	const handleRemoveMember = (id: number) => {
-		setTeam((prev: any) => ({
-			...prev,
-			members: prev.members.filter((m: any) => m.id !== id),
-			statistics: {
-				...prev.statistics,
-				memberCount: prev.statistics.memberCount - 1,
+		setLoading(true);
+		setError("");
+		setSuccess("");
+		const token = localStorage.getItem("token");
+		fetch(`${baseApiUrl}/teams/${team.id}/members/${id}`, {
+			method: "DELETE",
+			headers: {
+				Authorization: `Bearer ${token}`,
 			},
-		}));
+		})
+			.then(async (res) => {
+				const data = await res.json();
+				if (!res.ok || !data.success)
+					throw new Error(data.message || "Failed to remove member");
+				setTeam((prev: any) => ({
+					...prev,
+					members: prev.members.filter((m: any) => m.id !== id),
+				}));
+				// Refetch statistics after removing member
+				fetchTeamStatistics(team.id);
+				setSuccess("Member removed successfully!");
+			})
+			.catch((err) => {
+				setError(err.message || "Failed to remove member");
+			})
+			.finally(() => setLoading(false));
 	};
 
 	// Handler for edit team info (mock)
 	const handleEditTeam = () => {
-		setSuccess("Team info updated (mock)");
+		setLoading(true);
+		setError("");
+		setSuccess("");
+		const token = localStorage.getItem("token");
+		fetch(`${baseApiUrl}/teams/${team.id}`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				name: team.name,
+				description: team.description,
+				isActive: team.isActive,
+			}),
+		})
+			.then(async (res) => {
+				const data = await res.json();
+				if (!res.ok || !data.success)
+					throw new Error(data.message || "Failed to update team");
+				setTeam((prev: any) => ({ ...prev, ...data.data }));
+				setSuccess("Team info updated successfully!");
+			})
+			.catch((err) => {
+				setError(err.message || "Failed to update team");
+			})
+			.finally(() => setLoading(false));
 	};
 
 	// Handler for deactivate team (mock)
 	const handleDeactivateTeam = () => {
-		setTeam((prev: any) => ({ ...prev, isActive: false }));
-		setSuccess("Team deactivated (mock)");
+		setLoading(true);
+		setError("");
+		setSuccess("");
+		const token = localStorage.getItem("token");
+		fetch(`${baseApiUrl}/teams/${team.id}`, {
+			method: "DELETE",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+			.then(async (res) => {
+				const data = await res.json();
+				if (!res.ok || !data.success)
+					throw new Error(data.message || "Failed to deactivate team");
+				setTeam((prev: any) => ({ ...prev, isActive: false }));
+				// Optionally, refetch statistics if needed
+				fetchTeamStatistics(team.id);
+				setSuccess("Team deactivated successfully!");
+			})
+			.catch((err) => {
+				setError(err.message || "Failed to deactivate team");
+			})
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -170,8 +323,16 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 							</div>
 							<div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
 								License:{" "}
-								<span className="font-mono">{team.license.licenseKey}</span>{" "}
-								(expires {team.license.expirationDate})
+								{team.license && team.license.licenseKey ? (
+									<>
+										<span className="font-mono">{team.license.licenseKey}</span>{" "}
+										(expires {team.license.expirationDate})
+									</>
+								) : (
+									<span className="italic text-gray-400">
+										No license assigned
+									</span>
+								)}
 							</div>
 							<Button
 								size="sm"
@@ -194,7 +355,7 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 						{/* Team Members */}
 						<div className="mb-8">
 							<h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-								Members ({team.statistics.memberCount})
+								Members ({team?.statistics?.memberCount ?? 0})
 							</h3>
 							<div className="space-y-2 mb-2">
 								{team.members.map((m: any) => (
@@ -224,19 +385,55 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 							</div>
 							<div className="flex gap-2 mt-2 items-center">
 								<Input
-									placeholder="Add member by username"
-									value={addMemberId}
-									onChange={(e) => setAddMemberId(e.target.value)}
+									placeholder="Username"
+									value={addMemberForm.username}
+									onChange={(e) =>
+										setAddMemberForm((f) => ({
+											...f,
+											username: e.target.value,
+										}))
+									}
+									className="flex-1"
+								/>
+								<Input
+									placeholder="Email"
+									value={addMemberForm.email}
+									onChange={(e) =>
+										setAddMemberForm((f) => ({ ...f, email: e.target.value }))
+									}
+									className="flex-1"
+								/>
+								<Input
+									placeholder="Password"
+									type="password"
+									value={addMemberForm.password}
+									onChange={(e) =>
+										setAddMemberForm((f) => ({
+											...f,
+											password: e.target.value,
+										}))
+									}
 									className="flex-1"
 								/>
 								<Select
-									className="max-w-xs"
+									className="w-1/6"
 									items={roles}
-									placeholder="Select an role"
+									selectedKeys={new Set([addMemberForm.role])}
+									onSelectionChange={(keys) => {
+										const key = Array.from(keys)[0];
+										setAddMemberForm((f) => ({ ...f, role: key as string }));
+									}}
+									placeholder="Select role"
 								>
-									{(role) => <SelectItem>{role.label}</SelectItem>}
+									{(role) => (
+										<SelectItem key={role.key}>{role.label}</SelectItem>
+									)}
 								</Select>
-								<Button color="primary" onClick={handleAddMember}>
+								<Button
+									color="primary"
+									onClick={handleAddMember}
+									isLoading={loading}
+								>
 									Add
 								</Button>
 							</div>
@@ -251,25 +448,25 @@ const TeamManagement: React.FC<{ user: any }> = ({ user }) => {
 								<div className="bg-gray-100 dark:bg-gray-700 rounded p-4 text-center">
 									<div className="text-xs text-gray-500">Total Tasks</div>
 									<div className="text-xl font-bold">
-										{team.statistics.totalTasks}
+										{team?.statistics?.totalTasks ?? 0}
 									</div>
 								</div>
 								<div className="bg-gray-100 dark:bg-gray-700 rounded p-4 text-center">
 									<div className="text-xs text-gray-500">Completed</div>
 									<div className="text-xl font-bold">
-										{team.statistics.completedTasks}
+										{team?.statistics?.completedTasks ?? 0}
 									</div>
 								</div>
 								<div className="bg-gray-100 dark:bg-gray-700 rounded p-4 text-center">
 									<div className="text-xs text-gray-500">In Progress</div>
 									<div className="text-xl font-bold">
-										{team.statistics.inProgressTasks}
+										{team?.statistics?.inProgressTasks ?? 0}
 									</div>
 								</div>
 								<div className="bg-gray-100 dark:bg-gray-700 rounded p-4 text-center col-span-2 md:col-span-1">
 									<div className="text-xs text-gray-500">Total Earnings</div>
 									<div className="text-xl font-bold">
-										${team.statistics.totalEarnings}
+										${team?.statistics?.totalEarnings ?? 0}
 									</div>
 								</div>
 							</div>

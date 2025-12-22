@@ -19,13 +19,17 @@ const DashboardPage: React.FC = () => {
 
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
-	const [currentItemId, setCurrentItemId] = useState("dashboard");
+	const [currentItemId, setCurrentItemId] = useState(() => {
+		// If user has no team, default to team_management, else dashboard
+		if (user && !user.teamId) return "team_management";
+		return "dashboard";
+	});
 	const [dashboardKey, setDashboardKey] = useState(0);
 
 	// Force dashboard to remount when switching back to it
 	useEffect(() => {
-		if (currentItemId === 'dashboard') {
-			setDashboardKey(prev => prev + 1);
+		if (currentItemId === "dashboard") {
+			setDashboardKey((prev) => prev + 1);
 		}
 	}, [currentItemId]);
 
