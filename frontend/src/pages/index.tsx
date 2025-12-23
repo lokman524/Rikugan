@@ -43,7 +43,7 @@ export default function IndexPage() {
 					<Link
 						isExternal
 						className={buttonStyles({ variant: "bordered", radius: "full" })}
-						href={siteConfig.links.github}
+						href="https://github.com/AvalonRuFae/3100"
 					>
 						<GithubIcon size={20} />
 						GitHub
