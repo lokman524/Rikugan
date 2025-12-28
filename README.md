@@ -2,6 +2,10 @@
 
 A gamified project management system with bounty-based rewards, role-based access control, and team collaboration features.
 
+## Demo Video
+
+- https://drive.google.com/file/d/1mu7LVyT7o1Esn0wj_BPCyF5dzKre47jd/view?usp=sharing
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -12,21 +16,22 @@ A gamified project management system with bounty-based rewards, role-based acces
 ### Deploy with Docker (Recommended)
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd 3100
    ```
-
 2. **Start the application**
+
    ```bash
    docker compose up -d --build
    ```
-
 3. **Access the application**
+
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3000/api/v1
-
 4. **Login with demo account**
+
    - Email: `admin@dscpms.com`
    - Password: `Admin123!`
    - License Key: `DSCPMS-2024-UNLIMITED-ACCESS`
@@ -56,11 +61,12 @@ That's it! 🎉
 
 ## 👥 Default User Roles
 
-| Role | Email | Password | Permissions |
-|------|-------|----------|-------------|
-| Admin (Oyakatasama) | admin@dscpms.com | Admin123! | Full system access |
-| Senior (Hashira) | rengoku@dscpms.com | Hashira123! | Create tasks, manage team |
-| Junior (Goon) | tanjiro@dscpms.com | Goon123! | Work on tasks, earn bounties |
+
+| Role                | Email              | Password    | Permissions                  |
+| ------------------- | ------------------ | ----------- | ---------------------------- |
+| Admin (Oyakatasama) | admin@dscpms.com   | Admin123!   | Full system access           |
+| Senior (Hashira)    | rengoku@dscpms.com | Hashira123! | Create tasks, manage team    |
+| Junior (Goon)       | tanjiro@dscpms.com | Goon123!    | Work on tasks, earn bounties |
 
 ## 🔧 Manual Setup
 
@@ -84,6 +90,7 @@ npm run dev
 ### Database
 
 Ensure MySQL is running and create database:
+
 ```sql
 CREATE DATABASE dscpms;
 ```
@@ -91,6 +98,7 @@ CREATE DATABASE dscpms;
 ## 📝 Environment Configuration
 
 ### Backend (.env)
+
 ```env
 DB_HOST=localhost
 DB_PORT=3306
@@ -101,6 +109,7 @@ JWT_SECRET=your-secret-key
 ```
 
 ### Frontend (.env)
+
 ```env
 VITE_API_URL=http://localhost:3000/api/v1
 ```
@@ -108,6 +117,7 @@ VITE_API_URL=http://localhost:3000/api/v1
 ## 🐛 Troubleshooting
 
 **Port already in use:**
+
 ```bash
 # Stop all containers
 docker compose down
@@ -118,6 +128,7 @@ docker compose up -d --build
 ```
 
 **Database connection error:**
+
 ```bash
 # Check MySQL is running
 docker compose ps mysql
@@ -127,6 +138,7 @@ docker compose logs mysql
 ```
 
 **Frontend can't connect to backend:**
+
 - Verify backend is running at http://localhost:3000
 - Check `VITE_API_URL` in frontend/.env
 
@@ -163,14 +175,15 @@ npm run test:coverage
 
 ## 📊 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/login` | POST | User login |
-| `/auth/register` | POST | User registration |
-| `/tasks` | GET | List all tasks |
-| `/tasks/:id/assign` | POST | Assign task to self |
-| `/bounty/transactions/:userId` | GET | View transaction history |
-| `/notifications` | GET | Get notifications |
+
+| Endpoint                       | Method | Description              |
+| ------------------------------ | ------ | ------------------------ |
+| `/auth/login`                  | POST   | User login               |
+| `/auth/register`               | POST   | User registration        |
+| `/tasks`                       | GET    | List all tasks           |
+| `/tasks/:id/assign`            | POST   | Assign task to self      |
+| `/bounty/transactions/:userId` | GET    | View transaction history |
+| `/notifications`               | GET    | Get notifications        |
 
 See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for complete reference.
 
@@ -216,6 +229,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🆘 Support
 
 For detailed setup, troubleshooting, and production deployment, see:
+
 - [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) - API reference
 - [TESTING_DOCUMENTATION.md](./TESTING_DOCUMENTATION.md) - Testing guide
 
